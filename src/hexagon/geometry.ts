@@ -1,42 +1,39 @@
 export const RADIAL_LINE_COUNT = 72
-export const RING_BASE_FLAT_CM = 10
-export const RING_OUTER_FLAT_CM = 20
+export const INNER_CIRCUMRADIUS_CM = 4
+export const OUTER_FLAT_TO_FLAT_CM = 20
 export const CENTER_CROSS_HALF_LENGTH_CM = 0.3
-
-/**
- * Spacing x divides the 10cm span evenly with ring gaps of x, x, 1.5x, x, x.
- * Sizes follow 10, 10+x, 10+2x, 10+3.5x, 10+4.5x, 20 cm flat-to-flat.
- */
-export const RING_SPACING_CM = (RING_OUTER_FLAT_CM - RING_BASE_FLAT_CM) / 5.5
-const RING_X_COEFFICIENTS = [0, 1, 2, 3.5, 4.5, 5.5]
-
-export const RING_FLAT_TO_FLAT_CM = RING_X_COEFFICIENTS.map(
-  (coefficient) => RING_BASE_FLAT_CM + coefficient * RING_SPACING_CM,
-)
 
 export function flatToCircumradiusCm(flatToFlatCm: number): number {
   return flatToFlatCm / Math.sqrt(3)
 }
 
-export const RING_CIRCUMRADIUS_CM = RING_FLAT_TO_FLAT_CM.map(flatToCircumradiusCm)
-export const RING_CIRCUMRADIUS_MM = RING_CIRCUMRADIUS_CM.map((radius) => radius * 10)
+export function circumradiusToFlatCm(circumradiusCm: number): number {
+  return circumradiusCm * Math.sqrt(3)
+}
 
-export const INNER_FLAT_TO_FLAT_CM = RING_FLAT_TO_FLAT_CM[0]
-export const OUTER_FLAT_TO_FLAT_CM = RING_FLAT_TO_FLAT_CM[5]
+export const INNER_FLAT_TO_FLAT_CM = circumradiusToFlatCm(INNER_CIRCUMRADIUS_CM)
 export const INNER_FLAT_TO_FLAT_MM = INNER_FLAT_TO_FLAT_CM * 10
 export const OUTER_FLAT_TO_FLAT_MM = OUTER_FLAT_TO_FLAT_CM * 10
 
 /** Pointy-top hexagon: flat-to-flat distance equals sqrt(3) * circumradius. */
-export const INNER_CIRCUMRADIUS_CM = RING_CIRCUMRADIUS_CM[0]
-export const OUTER_CIRCUMRADIUS_CM = RING_CIRCUMRADIUS_CM[5]
-export const INNER_CIRCUMRADIUS_MM = RING_CIRCUMRADIUS_MM[0]
-export const OUTER_CIRCUMRADIUS_MM = RING_CIRCUMRADIUS_MM[5]
+export const OUTER_CIRCUMRADIUS_CM = flatToCircumradiusCm(OUTER_FLAT_TO_FLAT_CM)
+export const INNER_CIRCUMRADIUS_MM = INNER_CIRCUMRADIUS_CM * 10
+export const OUTER_CIRCUMRADIUS_MM = OUTER_CIRCUMRADIUS_CM * 10
+
+export const HEXAGON_RING_CIRCUMRADIUS_CM = [INNER_CIRCUMRADIUS_CM, OUTER_CIRCUMRADIUS_CM]
+export const HEXAGON_RING_CIRCUMRADIUS_MM = [INNER_CIRCUMRADIUS_MM, OUTER_CIRCUMRADIUS_MM]
 
 export const DIAGRAM_WIDTH_CM = OUTER_FLAT_TO_FLAT_CM
 export const DIAGRAM_HEIGHT_CM = 2 * OUTER_CIRCUMRADIUS_CM
 
 export const LINE_COLOR = '#18181b'
 export const VERTEX_LINE_COLOR = '#a1a1aa'
+export const DARK_RADIAL_LINE_COLOR = '#d4d4d8'
+export const DARK_RADIAL_LINE_COLOR_RGB: [number, number, number] = [212, 212, 216]
+export const VERTEX_LINE_COLOR_RGB: [number, number, number] = [161, 161, 170]
+
+/** Polar radius of the outermost hexagon vertex; polar tracks use r = 100 there. */
+export const POLAR_OUTER_RADIUS = 100
 
 export type Point = [number, number]
 
@@ -56,6 +53,22 @@ export function hexagonVertices(cx: number, cy: number, radius: number): Point[]
     const angle = -Math.PI / 2 + (i * Math.PI) / 3
     return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)]
   })
+}
+
+/** Polar angles use 0 at the outer hexagon's first vertex (pointy-top). */
+export function polarToCartesian(
+  cx: number,
+  cy: number,
+  r: number,
+  theta: number,
+  outerRadius: number,
+): Point {
+  const canvasAngle = theta - Math.PI / 2
+  const distance = (r / POLAR_OUTER_RADIUS) * outerRadius
+  return [
+    cx + distance * Math.cos(canvasAngle),
+    cy + distance * Math.sin(canvasAngle),
+  ]
 }
 
 function raySegmentIntersection(

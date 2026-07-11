@@ -4,13 +4,10 @@ import { exportHexagonPdf } from './exportPdf'
 import {
   DIAGRAM_HEIGHT_CM,
   DIAGRAM_WIDTH_CM,
+  INNER_CIRCUMRADIUS_CM,
+  OUTER_FLAT_TO_FLAT_CM,
   RADIAL_LINE_COUNT,
-  RING_FLAT_TO_FLAT_CM,
 } from './geometry'
-
-function formatRingSizes(): string {
-  return RING_FLAT_TO_FLAT_CM.map((size) => size.toFixed(1)).join(', ')
-}
 
 export function HexagonApp() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -59,8 +56,8 @@ export function HexagonApp() {
         <div>
           <h1 className="text-lg font-semibold">Hex Cribbage Board</h1>
           <p className="text-sm text-zinc-500">
-            6 concentric hexagons ({formatRingSizes()}&nbsp;cm flat-to-flat) ·{' '}
-            {RADIAL_LINE_COUNT} radial lines · print-ready PDF
+            {INNER_CIRCUMRADIUS_CM}&nbsp;cm inner circumradius · {OUTER_FLAT_TO_FLAT_CM}&nbsp;cm outer
+            flat-to-flat · {RADIAL_LINE_COUNT} radial lines · print-ready PDF
           </p>
         </div>
         <button

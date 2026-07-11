@@ -1,14 +1,16 @@
 import {
   CENTER_CROSS_HALF_LENGTH_CM,
   INNER_CIRCUMRADIUS_CM,
-  OUTER_CIRCUMRADIUS_CM,
+  DARK_RADIAL_LINE_COLOR,
   LINE_COLOR,
+  OUTER_CIRCUMRADIUS_CM,
   RADIAL_LINE_COUNT,
-  RING_CIRCUMRADIUS_CM,
+  HEXAGON_RING_CIRCUMRADIUS_CM,
   VERTEX_LINE_COLOR,
   hexagonVertices,
   radialSegments,
 } from './geometry'
+import { drawHoleGroupsCanvas } from './cribbageHoleGroup'
 
 function strokeHexagon(
   ctx: CanvasRenderingContext2D,
@@ -70,17 +72,19 @@ export function drawHexagonDiagram(
     outerRadius,
     RADIAL_LINE_COUNT,
   )) {
-    ctx.strokeStyle = isGray ? VERTEX_LINE_COLOR : LINE_COLOR
-    ctx.lineWidth = radialLineWidth
+    ctx.strokeStyle = isGray ? VERTEX_LINE_COLOR : DARK_RADIAL_LINE_COLOR
+    ctx.lineWidth = isGray ? radialLineWidth : radialLineWidth / 2
     ctx.beginPath()
     ctx.moveTo(start[0], start[1])
     ctx.lineTo(end[0], end[1])
     ctx.stroke()
   }
 
-  ctx.strokeStyle = LINE_COLOR
-  for (const radius of RING_CIRCUMRADIUS_CM.map((ringRadius) => ringRadius * unitsPerCm)) {
+  ctx.strokeStyle = DARK_RADIAL_LINE_COLOR
+  for (const radius of HEXAGON_RING_CIRCUMRADIUS_CM.map((ringRadius) => ringRadius * unitsPerCm)) {
     strokeHexagon(ctx, cx, cy, radius, hexLineWidth)
   }
+  ctx.strokeStyle = LINE_COLOR
   strokeCenterCross(ctx, cx, cy, crossHalfLength, crossLineWidth)
+  drawHoleGroupsCanvas(ctx, cx, cy, innerRadius, outerRadius, unitsPerCm, hexLineWidth)
 }
