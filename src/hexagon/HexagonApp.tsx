@@ -57,7 +57,7 @@ export function HexagonApp() {
     <div className="flex min-h-screen flex-col bg-zinc-100 text-zinc-900">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 bg-white px-6 py-4">
         <div>
-          <h1 className="text-lg font-semibold">Hexagon Radial Template</h1>
+          <h1 className="text-lg font-semibold">Hex Cribbage Board</h1>
           <p className="text-sm text-zinc-500">
             6 concentric hexagons ({formatRingSizes()}&nbsp;cm flat-to-flat) ·{' '}
             {RADIAL_LINE_COUNT} radial lines · print-ready PDF
