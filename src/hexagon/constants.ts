@@ -2,7 +2,7 @@
 export const INITIAL_RADIUS = 100
 
 export const LANE_SPACING = 5
-export const TRACK_SPACING = 1.5 * LANE_SPACING
+export const TRACK_SPACING = 0.5 * LANE_SPACING
 
 export const TRACK_LENGTH = 120
 export const PADDING = 1.5
