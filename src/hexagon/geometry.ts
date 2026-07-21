@@ -35,7 +35,41 @@ export const VERTEX_LINE_COLOR_RGB: [number, number, number] = [161, 161, 170]
 /** Polar radius of the outermost hexagon vertex; polar tracks use r = 100 there. */
 export const POLAR_OUTER_RADIUS = 100
 
+/** Rotation applied to the hex fabrication template behind the track. */
+export const HEX_TEMPLATE_ROTATION = Math.PI / 6
+
 export type Point = [number, number]
+
+export function rotatePointAround(
+  cx: number,
+  cy: number,
+  x: number,
+  y: number,
+  angle: number,
+): Point {
+  const dx = x - cx
+  const dy = y - cy
+  const cos = Math.cos(angle)
+  const sin = Math.sin(angle)
+  return [cx + dx * cos - dy * sin, cy + dx * sin + dy * cos]
+}
+
+export function centerCrossSegments(
+  cx: number,
+  cy: number,
+  halfLength: number,
+): { horizontal: [Point, Point]; vertical: [Point, Point] } {
+  return {
+    horizontal: [
+      rotatePointAround(cx, cy, cx - halfLength, cy, HEX_TEMPLATE_ROTATION),
+      rotatePointAround(cx, cy, cx + halfLength, cy, HEX_TEMPLATE_ROTATION),
+    ],
+    vertical: [
+      rotatePointAround(cx, cy, cx, cy - halfLength, HEX_TEMPLATE_ROTATION),
+      rotatePointAround(cx, cy, cx, cy + halfLength, HEX_TEMPLATE_ROTATION),
+    ],
+  }
+}
 
 export type RadialSegment = {
   start: Point
@@ -50,7 +84,7 @@ function isGrayRadialLine(index: number, count: number): boolean {
 
 export function hexagonVertices(cx: number, cy: number, radius: number): Point[] {
   return Array.from({ length: 6 }, (_, i) => {
-    const angle = -Math.PI / 2 + (i * Math.PI) / 3
+    const angle = -Math.PI / 2 + (i * Math.PI) / 3 + HEX_TEMPLATE_ROTATION
     return [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)]
   })
 }
@@ -117,7 +151,7 @@ export function radialSegments(
   count: number,
 ): RadialSegment[] {
   return Array.from({ length: count }, (_, i) => {
-    const angle = (i * 2 * Math.PI) / count - Math.PI / 2
+    const angle = (i * 2 * Math.PI) / count - Math.PI / 2 + HEX_TEMPLATE_ROTATION
     const innerDist = hexagonBoundaryDistance(angle, innerRadius)
     const outerDist = hexagonBoundaryDistance(angle, outerRadius)
     const cos = Math.cos(angle)

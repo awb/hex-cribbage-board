@@ -14,6 +14,9 @@ export const HOLE_CROSS_LENGTH_MM = 4
 
 export const LANE_COUNT = 3
 
+/** Radial drop per full turn: room for all lanes plus gap before the next turn. */
+export const TURN_DELTA_RADIUS = LANE_COUNT * LANE_SPACING + TRACK_SPACING
+
 /** Lane background fills at 50% opacity (red, green, blue). */
 export const LANE_BACKGROUND_COLORS = [
   'rgba(239, 68, 68, 0.5)',

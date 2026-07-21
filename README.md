@@ -48,7 +48,8 @@ Derived values:
 - `segmentCount = TRACK_LENGTH / HOLES_PER_SEGMENT` → 24 segments per lane
 - `vertexCount = segmentCount + 1` → 25 vertices per lane
 - `deltaTheta = 2π / SEGMENTS_PER_ROUND` → π/3 radians per segment
-- `vertexDeltaRadius = TRACK_SPACING / SEGMENTS_PER_ROUND` → 0.625 mm per segment
+- `turnDeltaRadius = LANE_COUNT * LANE_SPACING + TRACK_SPACING` → radial drop per full turn
+- `vertexDeltaRadius = turnDeltaRadius / SEGMENTS_PER_ROUND`
 - 24 segments ÷ 12 segments per round = **2 complete turns**
 
 ## Types
@@ -101,7 +102,7 @@ function generateCribbageBoard(
 Implementation:
 
 ```typescript
-const track = generateTrack({ r: initialRadius, theta: 0 }, TRACK_LENGTH, TRACK_SPACING)
+const track = generateTrack({ r: initialRadius, theta: 0 }, TRACK_LENGTH, TURN_DELTA_RADIUS)
 return { initialRadius, track }
 ```
 
@@ -109,7 +110,7 @@ return { initialRadius, track }
 
 Generate 3 interleaved lanes offset by `LANE_SPACING` mm. Successive spirals of the track should not overlap but leave `TRACK_SPACING` between successive turns.
 
-`deltaRadius` is the radial separation between successive **turns** of the spiral (`TRACK_SPACING`). Per-segment radial step is `deltaRadius / SEGMENTS_PER_ROUND`.
+`deltaRadius` is the radial drop per full turn: `LANE_COUNT * LANE_SPACING + TRACK_SPACING` (room for all lanes plus gap before the next turn). Per-segment radial step is `deltaRadius / SEGMENTS_PER_ROUND`.
 
 ```typescript
 function generateTrack(

@@ -14,6 +14,7 @@ import {
   OUTER_FLAT_TO_FLAT_CM,
   RADIAL_LINE_COUNT,
   VERTEX_LINE_COLOR_RGB,
+  centerCrossSegments,
   hexagonVertices,
   radialSegments,
 } from './geometry'
@@ -62,10 +63,11 @@ export function exportHexagonPdf() {
   }
 
   const crossHalfLengthMm = CENTER_CROSS_HALF_LENGTH_CM * CM_TO_MM
+  const { horizontal, vertical } = centerCrossSegments(cx, cy, crossHalfLengthMm)
   pdf.setDrawColor(...BLACK)
   pdf.setLineWidth(0.1)
-  pdf.line(cx - crossHalfLengthMm, cy, cx + crossHalfLengthMm, cy)
-  pdf.line(cx, cy - crossHalfLengthMm, cx, cy + crossHalfLengthMm)
+  pdf.line(horizontal[0][0], horizontal[0][1], horizontal[1][0], horizontal[1][1])
+  pdf.line(vertical[0][0], vertical[0][1], vertical[1][0], vertical[1][1])
 
   drawBoardHolesPdf(pdf, cx, cy, board)
 

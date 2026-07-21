@@ -7,6 +7,7 @@ import {
   OUTER_CIRCUMRADIUS_CM,
   RADIAL_LINE_COUNT,
   VERTEX_LINE_COLOR,
+  centerCrossSegments,
   hexagonVertices,
   radialSegments,
 } from './geometry'
@@ -39,11 +40,12 @@ function strokeCenterCross(
   halfLength: number,
   lineWidth: number,
 ) {
+  const { horizontal, vertical } = centerCrossSegments(cx, cy, halfLength)
   ctx.beginPath()
-  ctx.moveTo(cx - halfLength, cy)
-  ctx.lineTo(cx + halfLength, cy)
-  ctx.moveTo(cx, cy - halfLength)
-  ctx.lineTo(cx, cy + halfLength)
+  ctx.moveTo(horizontal[0][0], horizontal[0][1])
+  ctx.lineTo(horizontal[1][0], horizontal[1][1])
+  ctx.moveTo(vertical[0][0], vertical[0][1])
+  ctx.lineTo(vertical[1][0], vertical[1][1])
   ctx.lineWidth = lineWidth
   ctx.stroke()
 }
@@ -133,9 +135,10 @@ export function boardSvgElements(
   }
 
   const crossHalf = CENTER_CROSS_HALF_LENGTH_CM * unitsPerCm
+  const { horizontal, vertical } = centerCrossSegments(cx, cy, crossHalf)
   elements.push(
-    `<line x1="${cx - crossHalf}" y1="${cy}" x2="${cx + crossHalf}" y2="${cy}" stroke="${LINE_COLOR}" stroke-width="${0.04 * unitsPerCm}"/>`,
-    `<line x1="${cx}" y1="${cy - crossHalf}" x2="${cx}" y2="${cy + crossHalf}" stroke="${LINE_COLOR}" stroke-width="${0.04 * unitsPerCm}"/>`,
+    `<line x1="${horizontal[0][0]}" y1="${horizontal[0][1]}" x2="${horizontal[1][0]}" y2="${horizontal[1][1]}" stroke="${LINE_COLOR}" stroke-width="${0.04 * unitsPerCm}"/>`,
+    `<line x1="${vertical[0][0]}" y1="${vertical[0][1]}" x2="${vertical[1][0]}" y2="${vertical[1][1]}" stroke="${LINE_COLOR}" stroke-width="${0.04 * unitsPerCm}"/>`,
   )
 
   elements.push(holeSvgElements(cx, cy, board, unitsPerMm, LINE_COLOR))
