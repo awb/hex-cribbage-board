@@ -1,27 +1,29 @@
 import { jsPDF } from 'jspdf'
+import { drawBoardHolesPdf } from './drawHoles'
+import { drawLaneBackgroundsPdf } from './drawLanes'
+import { generateCribbageBoard } from './generateBoard'
 import {
   CENTER_CROSS_HALF_LENGTH_CM,
   DIAGRAM_HEIGHT_CM,
   DIAGRAM_WIDTH_CM,
+  DARK_RADIAL_LINE_COLOR_RGB,
+  HEXAGON_RING_CIRCUMRADIUS_MM,
   INNER_CIRCUMRADIUS_CM,
   INNER_CIRCUMRADIUS_MM,
   OUTER_CIRCUMRADIUS_MM,
   OUTER_FLAT_TO_FLAT_CM,
   RADIAL_LINE_COUNT,
-  HEXAGON_RING_CIRCUMRADIUS_MM,
-  DARK_RADIAL_LINE_COLOR_RGB,
-  LINE_COLOR,
+  VERTEX_LINE_COLOR_RGB,
   hexagonVertices,
   radialSegments,
-  VERTEX_LINE_COLOR_RGB,
 } from './geometry'
-import { drawHoleGroupsPdf } from './cribbageHoleGroup'
 
 const CM_TO_MM = 10
 const MARGIN_MM = 10
 const BLACK: [number, number, number] = [0, 0, 0]
 
 export function exportHexagonPdf() {
+  const board = generateCribbageBoard()
   const outerRadiusMm = OUTER_CIRCUMRADIUS_MM
   const pageW = DIAGRAM_WIDTH_CM * CM_TO_MM + 2 * MARGIN_MM
   const pageH = DIAGRAM_HEIGHT_CM * CM_TO_MM + 2 * MARGIN_MM
@@ -33,6 +35,8 @@ export function exportHexagonPdf() {
     format: [pageW, pageH],
     orientation: pageW > pageH ? 'landscape' : 'portrait',
   })
+
+  drawLaneBackgroundsPdf(pdf, cx, cy, board)
 
   for (const { start, end, isGray } of radialSegments(
     cx,
@@ -63,7 +67,7 @@ export function exportHexagonPdf() {
   pdf.line(cx - crossHalfLengthMm, cy, cx + crossHalfLengthMm, cy)
   pdf.line(cx, cy - crossHalfLengthMm, cx, cy + crossHalfLengthMm)
 
-  drawHoleGroupsPdf(pdf, cx, cy, INNER_CIRCUMRADIUS_MM, outerRadiusMm)
+  drawBoardHolesPdf(pdf, cx, cy, board)
 
   pdf.save(`hexagon-${OUTER_FLAT_TO_FLAT_CM}cm-inner-${INNER_CIRCUMRADIUS_CM}cm-${RADIAL_LINE_COUNT}-lines.pdf`)
 }

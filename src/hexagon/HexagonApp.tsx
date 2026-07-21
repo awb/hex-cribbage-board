@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useRef } from 'react'
-import { drawHexagonDiagram } from './drawDiagram'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { TRACK_LENGTH } from './constants'
+import { drawBoardCanvas } from './drawBoard'
 import { exportHexagonPdf } from './exportPdf'
+import { exportHexagonSvg } from './exportSvg'
+import { generateCribbageBoard } from './generateBoard'
 import {
   DIAGRAM_HEIGHT_CM,
   DIAGRAM_WIDTH_CM,
@@ -12,6 +15,7 @@ import {
 export function HexagonApp() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const board = useMemo(() => generateCribbageBoard(), [])
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current
@@ -37,8 +41,8 @@ export function HexagonApp() {
     if (!ctx) return
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    drawHexagonDiagram(ctx, drawW / 2, drawH / 2, unitsPerCm)
-  }, [])
+    drawBoardCanvas(ctx, drawW / 2, drawH / 2, board, unitsPerCm)
+  }, [board])
 
   useEffect(() => {
     redraw()
@@ -57,16 +61,25 @@ export function HexagonApp() {
           <h1 className="text-lg font-semibold">Hex Cribbage Board</h1>
           <p className="text-sm text-zinc-500">
             {INNER_CIRCUMRADIUS_CM}&nbsp;cm inner circumradius · {OUTER_FLAT_TO_FLAT_CM}&nbsp;cm outer
-            flat-to-flat · {RADIAL_LINE_COUNT} radial lines · print-ready PDF
+            flat-to-flat · {RADIAL_LINE_COUNT} radial lines · {TRACK_LENGTH} holes × 3 lanes
           </p>
         </div>
-        <button
-          type="button"
-          onClick={exportHexagonPdf}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
-        >
-          Export PDF
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={exportHexagonPdf}
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+          >
+            Export PDF
+          </button>
+          <button
+            type="button"
+            onClick={exportHexagonSvg}
+            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
+          >
+            Export SVG
+          </button>
+        </div>
       </header>
 
       <main
