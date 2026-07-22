@@ -1,6 +1,6 @@
 # Hexagonal Cribbage Board
 
-This app draws a cribbage board layout as a template for fabrication. The layout is hexagonal: 3 parallel lanes of holes, grouped in blocks of 5, spiral in from the outer edge in a hexagonal pattern for a total of 120 holes per lane and exactly 2 complete turns around the board. The board can be viewed in a browser (JavaScript canvas), exported as PDF for printing, and exported as SVG for transfer to CAD software. The UI provides export buttons and a canvas to display the shape.
+This app draws a cribbage board layout as a template for fabrication. The layout is hexagonal: 3 parallel lanes of holes, grouped in blocks of 5, spiral in from the outer edge for a total of 120 holes per lane and exactly 2 complete turns around the board. The board can be viewed in a browser (JavaScript canvas), exported as PDF for printing, and exported as SVG for transfer to CAD software. The UI provides export buttons, a layout toggle, and a canvas to display the shape.
 
 ## Running the app
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Open `hexagon.html` in the browser (Vite prints the local URL).
+Open `hexagon.html` in the browser (Vite prints the local URL, something like [http://localhost:5173/hexagon.html](http://localhost:5173/hexagon.html)).
 
 ## Coordinate system
 
@@ -18,56 +18,85 @@ Open `hexagon.html` in the browser (Vite prints the local URL).
 - Increasing `theta` produces a **clockwise** spiral.
 - Holes lie on straight lines between segment endpoints (interpolated in Cartesian space, stored as polar).
 
+## Layout variants
+
+Two layouts share the same board constants (`TRACK_LENGTH`, `LANE_COUNT`, `TRACK_SPACING`, etc.) and both produce 120 holes per lane in groups of 5. They differ in how each turn is subdivided:
+
+| | **Dodecagonal** (default) | **Hexagonal** |
+|---|---|---|
+| `segmentsPerRound` | 12 | 6 |
+| `deltaTheta` | π/6 | π/3 |
+| `holesPerSegment` | 5 | 10 |
+| Segments per lane | 24 | 12 |
+| Complete turns | 2 | 2 |
+| Holes per group | 5 | 5 (two groups per segment) |
+
+A UI toggle switches between layouts. Changing the toggle regenerates the board and applies to PDF/SVG export.
+
+```typescript
+type LayoutVariant = 'dodecagonal' | 'hexagonal'
+
+type LayoutConfig = {
+  segmentsPerRound: number
+  holesPerSegment: number
+}
+
+const LAYOUTS: Record<LayoutVariant, LayoutConfig> = {
+  dodecagonal: { segmentsPerRound: 12, holesPerSegment: 5 },
+  hexagonal: { segmentsPerRound: 6, holesPerSegment: 10 },
+}
+
+const DEFAULT_LAYOUT: LayoutVariant = 'dodecagonal'
+```
+
 ## Abstract design
 
 The abstractions are:
 
 - **CribbageBoard** — a cribbage board layout. Has a track that starts at PolarPoint `[INITIAL_RADIUS, 0]` and spirals in toward the center. Each turn of the track around the center is separated from the previous by `TRACK_SPACING`.
-- **Track** — a set of 3 parallel lanes with separation `LANE_SPACING` and length `TRACK_LENGTH`. The first lane starts at the track initial location; the initial radius of the 2nd lane is less by `LANE_SPACING`, and the 3rd lane similarly.
-- **Lane** — an ordered set of segments, each starting from the endpoint of the previous. Each endpoint is `2π / SEGMENTS_PER_ROUND` radians ahead of its start point so the lane spirals around the board center. The drawn representation of a lane has a background color.
-- **Segment** — has a defined start point and end point and contains 5 holes in a line, with padding between groups of holes proportionate to spacing within a group by constant multiplier `PADDING`.
+- **Track** — a set of parallel lanes with separation `LANE_SPACING` and length `TRACK_LENGTH`. The first lane starts at the track initial location; the initial radial location of the 2nd lane is less by `LANE_SPACING`, and the 3rd lane similarly.
+- **Lane** — an ordered set of segments, each starting from the endpoint of the previous. Each endpoint is `2π / segmentsPerRound` radians ahead of its start point so the lane spirals around the board center. The drawn representation of a lane has a background color.
+- **Segment** — has a defined start point and end point and contains holes in a straight line (5 or 10 depending on layout), with padding between groups of holes proportionate to spacing within a group by constant multiplier `PADDING`.
 - **Hole** — a point at polar coordinate `(r, theta)`. The drawn representation is a circle 3 mm in diameter centered on the point and a cross comprised of 4 mm lines intersecting at the point.
 
 ## Constants
 
+Shared by both layouts:
+
 ```typescript
-INITIAL_RADIUS = 100          // mm
-LANE_SPACING = 5              // mm
-TRACK_SPACING = 1.5 * LANE_SPACING
-TRACK_LENGTH = 120            // holes per lane
-PADDING = 1.5
-SEGMENTS_PER_ROUND = 12
-HOLES_PER_SEGMENT = 5
+INITIAL_RADIUS = 100                // mm
+LANE_SPACING = 5                    // mm
+TRACK_SPACING = 1.5 * LANE_SPACING  // mm
+TRACK_LENGTH = 120                  // holes per lane
+PADDING = 1.5                       // multiplier for calculated hole spacing
+HOLES_PER_GROUP = 5                 // holes per group within a segment
 LANE_COUNT = 3
-HOLE_DIAMETER_MM = 3
+HOLE_DIAMETER_MM = 3                // mm
 HOLE_CROSS_LENGTH_MM = 4
 ```
 
-Derived values:
+Per-layout values come from `LAYOUTS` (see Layout variants above).
 
-- `segmentCount = TRACK_LENGTH / HOLES_PER_SEGMENT` → 24 segments per lane
-- `vertexCount = segmentCount + 1` → 25 vertices per lane
-- `deltaTheta = 2π / SEGMENTS_PER_ROUND` → π/3 radians per segment
+Derived values (computed from active layout):
+
+- `segmentCount = TRACK_LENGTH / holesPerSegment` → 24 (dodecagonal) or 12 (hexagonal)
+- `vertexCount = segmentCount + 1`
+- `deltaTheta = 2π / segmentsPerRound` → π/6 (dodecagonal) or π/3 (hexagonal)
 - `turnDeltaRadius = LANE_COUNT * LANE_SPACING + TRACK_SPACING` → radial drop per full turn
-- `vertexDeltaRadius = turnDeltaRadius / SEGMENTS_PER_ROUND`
-- 24 segments ÷ 12 segments per round = **2 complete turns**
+- `vertexDeltaRadius = turnDeltaRadius / segmentsPerRound`
+- `segmentCount / segmentsPerRound = 2` complete turns for both layouts
 
 ## Types
-
-### PolarPoint
 
 ```typescript
 type PolarPoint = {
   r: number
   theta: number
 }
-```
 
-### CribbageBoard, Track, Lane, Segment
-
-```typescript
 type CribbageBoard = {
   initialRadius: number  // mm; outermost lane start radius
+  layout: LayoutVariant
   track: Track
 }
 
@@ -81,7 +110,7 @@ type Lane = {
 }
 
 type Segment = {
-  holes: PolarPoint[]    // always HOLES_PER_SEGMENT (5) in current design
+  holes: PolarPoint[]    // length = layout.holesPerSegment (5 or 10)
   start: PolarPoint
   end: PolarPoint
 }
@@ -91,32 +120,39 @@ type Segment = {
 
 ### `generateCribbageBoard`
 
-Generate a track spiraling clockwise in from the initial location with 3 interleaved lanes, 120 holes per lane, in segments that span π/3 radians.
+Generate a track spiraling clockwise in from the initial location with 3 interleaved lanes and 120 holes per lane.
 
 ```typescript
 function generateCribbageBoard(
   initialRadius: number = INITIAL_RADIUS,
+  layout: LayoutVariant = DEFAULT_LAYOUT,
 ): CribbageBoard
 ```
 
 Implementation:
 
 ```typescript
-const track = generateTrack({ r: initialRadius, theta: 0 }, TRACK_LENGTH, TURN_DELTA_RADIUS)
-return { initialRadius, track }
+const track = generateTrack(
+  { r: initialRadius, theta: 0 },
+  TRACK_LENGTH,
+  TURN_DELTA_RADIUS,
+  LAYOUTS[layout],
+)
+return { initialRadius, layout, track }
 ```
 
 ### `generateTrack`
 
 Generate 3 interleaved lanes offset by `LANE_SPACING` mm. Successive spirals of the track should not overlap but leave `TRACK_SPACING` between successive turns.
 
-`deltaRadius` is the radial drop per full turn: `LANE_COUNT * LANE_SPACING + TRACK_SPACING` (room for all lanes plus gap before the next turn). Per-segment radial step is `deltaRadius / SEGMENTS_PER_ROUND`.
+`deltaRadius` is the radial drop per full turn: `LANE_COUNT * LANE_SPACING + TRACK_SPACING` (same for both layouts). Per-segment radial step is `deltaRadius / layout.segmentsPerRound`.
 
 ```typescript
 function generateTrack(
   startingPoint: PolarPoint,
   numberOfHoles: number,
   deltaRadius: number,
+  layout: LayoutConfig,
 ): Track
 ```
 
@@ -130,12 +166,13 @@ function generateLane(
   deltaRadius: number,   // radial step between successive segment endpoints
   deltaTheta: number,
   n: number,              // vertex count including first and last
+  holesPerSegment: number,
 ): Pick<Lane, 'segments'>
 ```
 
 ### `generateSegment`
 
-Calculate hole locations along a straight segment between successive vertices of a spiral. Holes are arranged in groups of 5 separated by padding proportionate to the spacing between holes.
+Calculate hole locations along a straight segment between successive vertices of a spiral. Holes are arranged in groups of 5 separated by padding proportionate to the spacing between holes. Signature unchanged; hexagonal layout passes `n = 10`.
 
 Example: 10 holes with padding 1.5 on a segment 1100 mm long are at these distances from the start point: 75, 175, 275, 375, 475, 625, 725, 825, 925, 1025. Spacing within a group is 100 mm; spacing between groups is 150 mm (= 1.5 × 100).
 
@@ -150,7 +187,8 @@ function generateSegment(
 
 ## Rendering
 
-- **Hex template overlay** (for fabrication): inner and outer hex outlines, 72 radial lines, center cross.
+- **Hex template overlay** (for fabrication): inner and outer hex outlines, 72 radial lines, center cross (rotated π/6 behind track).
 - **Lane backgrounds**: red, green, blue at 50% opacity.
 - **Holes**: 3 mm circle + 4 mm cross at each hole location.
+- **Layout toggle**: dodecagonal / hexagonal.
 - **Exports**: canvas preview, PDF (print-ready), SVG (CAD transfer).

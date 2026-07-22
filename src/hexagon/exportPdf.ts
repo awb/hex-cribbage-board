@@ -18,13 +18,14 @@ import {
   hexagonVertices,
   radialSegments,
 } from './geometry'
+import { DEFAULT_LAYOUT, type LayoutVariant } from './layouts'
 
 const CM_TO_MM = 10
 const MARGIN_MM = 10
 const BLACK: [number, number, number] = [0, 0, 0]
 
-export function exportHexagonPdf() {
-  const board = generateCribbageBoard()
+export function exportHexagonPdf(layout: LayoutVariant = DEFAULT_LAYOUT) {
+  const board = generateCribbageBoard(undefined, layout)
   const outerRadiusMm = OUTER_CIRCUMRADIUS_MM
   const pageW = DIAGRAM_WIDTH_CM * CM_TO_MM + 2 * MARGIN_MM
   const pageH = DIAGRAM_HEIGHT_CM * CM_TO_MM + 2 * MARGIN_MM
@@ -71,5 +72,5 @@ export function exportHexagonPdf() {
 
   drawBoardHolesPdf(pdf, cx, cy, board)
 
-  pdf.save(`hexagon-${OUTER_FLAT_TO_FLAT_CM}cm-inner-${INNER_CIRCUMRADIUS_CM}cm-${RADIAL_LINE_COUNT}-lines.pdf`)
+  pdf.save(`hexagon-${layout}-${OUTER_FLAT_TO_FLAT_CM}cm-inner-${INNER_CIRCUMRADIUS_CM}cm-${RADIAL_LINE_COUNT}-lines.pdf`)
 }

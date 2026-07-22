@@ -6,8 +6,7 @@ export const TRACK_SPACING = 0.5 * LANE_SPACING
 
 export const TRACK_LENGTH = 120
 export const PADDING = 1.5
-export const SEGMENTS_PER_ROUND = 12
-export const HOLES_PER_SEGMENT = 5
+export const HOLES_PER_GROUP = 5
 
 export const HOLE_DIAMETER_MM = 3
 export const HOLE_CROSS_LENGTH_MM = 4

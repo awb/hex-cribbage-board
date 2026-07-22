@@ -1,9 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TRACK_LENGTH } from './constants'
 import { drawBoardCanvas } from './drawBoard'
 import { exportHexagonPdf } from './exportPdf'
 import { exportHexagonSvg } from './exportSvg'
 import { generateCribbageBoard } from './generateBoard'
+import {
+  DEFAULT_LAYOUT,
+  LAYOUTS,
+  type LayoutVariant,
+} from './layouts'
 import {
   DIAGRAM_HEIGHT_CM,
   DIAGRAM_WIDTH_CM,
@@ -12,10 +17,16 @@ import {
   RADIAL_LINE_COUNT,
 } from './geometry'
 
+const LAYOUT_LABELS: Record<LayoutVariant, string> = {
+  dodecagonal: 'Dodecagonal',
+  hexagonal: 'Hexagonal',
+}
+
 export function HexagonApp() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const board = useMemo(() => generateCribbageBoard(), [])
+  const [layout, setLayout] = useState<LayoutVariant>(DEFAULT_LAYOUT)
+  const board = useMemo(() => generateCribbageBoard(undefined, layout), [layout])
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current
@@ -54,6 +65,8 @@ export function HexagonApp() {
     return () => observer.disconnect()
   }, [redraw])
 
+  const layoutConfig = LAYOUTS[layout]
+
   return (
     <div className="flex min-h-screen flex-col bg-zinc-100 text-zinc-900">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 bg-white px-6 py-4">
@@ -61,20 +74,39 @@ export function HexagonApp() {
           <h1 className="text-lg font-semibold">Hex Cribbage Board</h1>
           <p className="text-sm text-zinc-500">
             {INNER_CIRCUMRADIUS_CM}&nbsp;cm inner circumradius · {OUTER_FLAT_TO_FLAT_CM}&nbsp;cm outer
-            flat-to-flat · {RADIAL_LINE_COUNT} radial lines · {TRACK_LENGTH} holes × 3 lanes
+            flat-to-flat · {RADIAL_LINE_COUNT} radial lines · {TRACK_LENGTH} holes × 3 lanes ·{' '}
+            {LAYOUT_LABELS[layout].toLowerCase()} layout
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <fieldset className="flex items-center gap-1 rounded-lg border border-zinc-300 p-1">
+            <legend className="sr-only">Layout</legend>
+            {(Object.keys(LAYOUTS) as LayoutVariant[]).map((variant) => (
+              <button
+                key={variant}
+                type="button"
+                aria-pressed={layout === variant}
+                onClick={() => setLayout(variant)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                  layout === variant
+                    ? 'bg-zinc-900 text-white'
+                    : 'text-zinc-700 hover:bg-zinc-100'
+                }`}
+              >
+                {LAYOUT_LABELS[variant]}
+              </button>
+            ))}
+          </fieldset>
           <button
             type="button"
-            onClick={exportHexagonPdf}
+            onClick={() => exportHexagonPdf(layout)}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
           >
             Export PDF
           </button>
           <button
             type="button"
-            onClick={exportHexagonSvg}
+            onClick={() => exportHexagonSvg(layout)}
             className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
           >
             Export SVG
@@ -91,6 +123,10 @@ export function HexagonApp() {
           className="rounded-lg border border-zinc-200 bg-white shadow-sm"
         />
       </main>
+      <p className="sr-only">
+        {layoutConfig.segmentsPerRound} segments per turn, {layoutConfig.holesPerSegment} holes per
+        segment
+      </p>
     </div>
   )
 }

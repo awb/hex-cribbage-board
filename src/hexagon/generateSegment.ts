@@ -1,7 +1,6 @@
+import { HOLES_PER_GROUP } from './constants'
 import { cartesianToPolarMm, polarToCartesianMm } from './polar'
 import type { PolarPoint, Segment } from './types'
-
-const HOLES_PER_GROUP = 5
 
 /**
  * Place holes in groups of five along the straight segment between start and end.

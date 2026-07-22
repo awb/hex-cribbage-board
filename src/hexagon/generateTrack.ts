@@ -1,21 +1,17 @@
-import {
-  HOLES_PER_SEGMENT,
-  LANE_BACKGROUND_COLORS,
-  LANE_COUNT,
-  LANE_SPACING,
-  SEGMENTS_PER_ROUND,
-} from './constants'
+import { LANE_BACKGROUND_COLORS, LANE_COUNT, LANE_SPACING } from './constants'
 import { generateLane } from './generateLane'
+import type { LayoutConfig } from './layouts'
 import type { PolarPoint, Track } from './types'
 
 export function generateTrack(
   startingPoint: PolarPoint,
   numberOfHoles: number,
   deltaRadius: number,
+  layout: LayoutConfig,
 ): Track {
-  const deltaTheta = (2 * Math.PI) / SEGMENTS_PER_ROUND
-  const vertexDeltaRadius = deltaRadius / SEGMENTS_PER_ROUND
-  const vertexCount = numberOfHoles / HOLES_PER_SEGMENT + 1
+  const deltaTheta = (2 * Math.PI) / layout.segmentsPerRound
+  const vertexDeltaRadius = deltaRadius / layout.segmentsPerRound
+  const vertexCount = numberOfHoles / layout.holesPerSegment + 1
 
   const lanes = Array.from({ length: LANE_COUNT }, (_, laneIndex) => ({
     ...generateLane(
@@ -26,6 +22,7 @@ export function generateTrack(
       vertexDeltaRadius,
       deltaTheta,
       vertexCount,
+      layout.holesPerSegment,
     ),
     bgColor: LANE_BACKGROUND_COLORS[laneIndex],
   }))

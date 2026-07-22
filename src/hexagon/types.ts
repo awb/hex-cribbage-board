@@ -1,3 +1,5 @@
+import type { LayoutVariant } from './layouts'
+
 export type PolarPoint = {
   r: number
   theta: number
@@ -20,6 +22,7 @@ export type Track = {
 
 export type CribbageBoard = {
   initialRadius: number
+  layout: LayoutVariant
   track: Track
 }
 

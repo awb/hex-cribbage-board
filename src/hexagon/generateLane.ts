@@ -1,4 +1,4 @@
-import { HOLES_PER_SEGMENT, PADDING } from './constants'
+import { PADDING } from './constants'
 import { generateSegment } from './generateSegment'
 import type { Lane, PolarPoint } from './types'
 
@@ -7,6 +7,7 @@ export function generateLane(
   deltaRadius: number,
   deltaTheta: number,
   n: number,
+  holesPerSegment: number,
 ): Pick<Lane, 'segments'> {
   const segments = []
   let current = start
@@ -16,7 +17,7 @@ export function generateLane(
       r: current.r - deltaRadius,
       theta: current.theta + deltaTheta,
     }
-    segments.push(generateSegment(current, end, PADDING, HOLES_PER_SEGMENT))
+    segments.push(generateSegment(current, end, PADDING, holesPerSegment))
     current = end
   }
 

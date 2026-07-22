@@ -7,9 +7,10 @@ import {
   OUTER_FLAT_TO_FLAT_CM,
   RADIAL_LINE_COUNT,
 } from './geometry'
+import { DEFAULT_LAYOUT, type LayoutVariant } from './layouts'
 
-export function exportHexagonSvg() {
-  const board = generateCribbageBoard()
+export function exportHexagonSvg(layout: LayoutVariant = DEFAULT_LAYOUT) {
+  const board = generateCribbageBoard(undefined, layout)
   const unitsPerCm = 10
   const width = DIAGRAM_WIDTH_CM * unitsPerCm
   const height = DIAGRAM_HEIGHT_CM * unitsPerCm
@@ -26,7 +27,7 @@ export function exportHexagonSvg() {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `hexagon-${OUTER_FLAT_TO_FLAT_CM}cm-inner-${INNER_CIRCUMRADIUS_CM}cm-${RADIAL_LINE_COUNT}-lines.svg`
+  link.download = `hexagon-${layout}-${OUTER_FLAT_TO_FLAT_CM}cm-inner-${INNER_CIRCUMRADIUS_CM}cm-${RADIAL_LINE_COUNT}-lines.svg`
   link.click()
   URL.revokeObjectURL(url)
 }
