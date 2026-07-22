@@ -11,6 +11,25 @@ npm run dev
 
 Open `hexagon.html` in the browser (Vite prints the local URL, something like [http://localhost:5173/hexagon.html](http://localhost:5173/hexagon.html)).
 
+## Deployment (GitHub Pages)
+
+Pushes to `main` build and deploy automatically via GitHub Actions.
+
+1. In the repo on GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**
+2. Merge to `main` (or push directly) to trigger a deploy
+3. Open the cribbage board at:
+
+   `https://awb.github.io/hex-cribbage-board/hexagon.html`
+
+Local production preview:
+
+```bash
+VITE_BASE=/hex-cribbage-board/ npm run build
+npm run preview
+```
+
+Then open `/hex-cribbage-board/hexagon.html` on the preview server.
+
 ## Coordinate system
 
 - Polar coordinates: `r` in mm, `theta` in radians.
