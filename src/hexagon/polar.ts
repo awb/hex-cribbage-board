@@ -16,6 +16,12 @@ export function cartesianToPolarMm(x: number, y: number): PolarPoint {
   }
 }
 
+export function polarMidpointCartesian(a: PolarPoint, b: PolarPoint): PolarPoint {
+  const ac = polarToCartesianMm(a)
+  const bc = polarToCartesianMm(b)
+  return cartesianToPolarMm((ac.x + bc.x) / 2, (ac.y + bc.y) / 2)
+}
+
 export function polarToCanvas(
   cx: number,
   cy: number,

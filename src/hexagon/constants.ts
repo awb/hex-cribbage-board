@@ -8,6 +8,9 @@ export const TRACK_LENGTH = 120
 export const PADDING = 1.5
 export const HOLES_PER_GROUP = 5
 
+/** Every spiral must yield this many vertices (24 segments × 5 holes = 120 holes). */
+export const SPIRAL_VERTEX_COUNT = TRACK_LENGTH / HOLES_PER_GROUP + 1
+
 export const HOLE_DIAMETER_MM = 3
 export const HOLE_CROSS_LENGTH_MM = 4
 

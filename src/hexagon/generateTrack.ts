@@ -5,24 +5,22 @@ import type { PolarPoint, Track } from './types'
 
 export function generateTrack(
   startingPoint: PolarPoint,
-  numberOfHoles: number,
+  _numberOfHoles: number,
   deltaRadius: number,
   layout: LayoutConfig,
 ): Track {
   const deltaTheta = (2 * Math.PI) / layout.segmentsPerRound
   const vertexDeltaRadius = deltaRadius / layout.segmentsPerRound
-  const vertexCount = numberOfHoles / layout.holesPerSegment + 1
 
   const lanes = Array.from({ length: LANE_COUNT }, (_, laneIndex) => ({
     ...generateLane(
       {
         r: startingPoint.r - laneIndex * LANE_SPACING,
-        theta: startingPoint.theta,
+        theta: startingPoint.theta + layout.pathStartOffsetInRadians,
       },
       vertexDeltaRadius,
       deltaTheta,
-      vertexCount,
-      layout.holesPerSegment,
+      layout.spiral,
     ),
     bgColor: LANE_BACKGROUND_COLORS[laneIndex],
   }))

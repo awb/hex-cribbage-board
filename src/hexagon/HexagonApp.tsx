@@ -124,8 +124,8 @@ export function HexagonApp() {
         />
       </main>
       <p className="sr-only">
-        {layoutConfig.segmentsPerRound} segments per turn, {layoutConfig.holesPerSegment} holes per
-        segment
+        {layoutConfig.segmentsPerRound} segments per turn, path offset{' '}
+        {layoutConfig.pathStartOffsetInRadians} radians
       </p>
     </div>
   )
