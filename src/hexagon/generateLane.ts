@@ -8,7 +8,7 @@ export function generateLane(
   deltaRadius: number,
   deltaTheta: number,
   spiral: SpiralFn,
-): Pick<Lane, 'segments'> {
+): Pick<Lane, 'segments' | 'minimumHoleSpacingMm'> {
   const vertices = spiral(start, deltaRadius, deltaTheta)
   if (vertices.length !== SPIRAL_VERTEX_COUNT) {
     throw new Error(
@@ -16,10 +16,13 @@ export function generateLane(
     )
   }
   const segments = []
+  let minimumHoleSpacingMm = Infinity
 
   for (let i = 0; i < vertices.length - 1; i++) {
-    segments.push(generateSegment(vertices[i], vertices[i + 1], PADDING, HOLES_PER_GROUP))
+    const segment = generateSegment(vertices[i], vertices[i + 1], PADDING, HOLES_PER_GROUP)
+    segments.push(segment)
+    minimumHoleSpacingMm = Math.min(minimumHoleSpacingMm, segment.minimumHoleSpacingMm)
   }
 
-  return { segments }
+  return { segments, minimumHoleSpacingMm }
 }

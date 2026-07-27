@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { TRACK_LENGTH } from './constants'
+import { OUTLINE_RADIUS_MM, TRACK_LENGTH } from './constants'
 import { drawBoardCanvas } from './drawBoard'
 import { exportHexagonPdf } from './exportPdf'
 import { exportHexagonSvg } from './exportSvg'
@@ -9,17 +9,15 @@ import {
   LAYOUTS,
   type LayoutVariant,
 } from './layouts'
-import {
-  DIAGRAM_HEIGHT_CM,
-  DIAGRAM_WIDTH_CM,
-  INNER_CIRCUMRADIUS_CM,
-  OUTER_FLAT_TO_FLAT_CM,
-  RADIAL_LINE_COUNT,
-} from './geometry'
+import { DIAGRAM_HEIGHT_CM, DIAGRAM_WIDTH_CM, OUTLINE_FLAT_TO_FLAT_CM } from './geometry'
 
 const LAYOUT_LABELS: Record<LayoutVariant, string> = {
   dodecagonal: 'Dodecagonal',
   hexagonal: 'Hexagonal',
+}
+
+function formatMm(value: number): string {
+  return value.toFixed(1)
 }
 
 export function HexagonApp() {
@@ -73,10 +71,11 @@ export function HexagonApp() {
         <div>
           <h1 className="text-lg font-semibold">Hex Cribbage Board</h1>
           <p className="text-sm text-zinc-500">
-            {INNER_CIRCUMRADIUS_CM}&nbsp;cm inner circumradius · {OUTER_FLAT_TO_FLAT_CM}&nbsp;cm outer
-            flat-to-flat · {RADIAL_LINE_COUNT} radial lines · {TRACK_LENGTH} holes × 3 lanes ·{' '}
-            {LAYOUT_LABELS[layout].toLowerCase()} layout
-
+            {formatMm(OUTLINE_RADIUS_MM)}&nbsp;mm outline circumradius ·{' '}
+            {OUTLINE_FLAT_TO_FLAT_CM.toFixed(1)}&nbsp;cm flat-to-flat · track{' '}
+            {formatMm(board.track.outermostTrackRadiusMm)}–{formatMm(board.track.innermostTrackRadiusMm)}
+            &nbsp;mm · min hole spacing {formatMm(board.track.minimumHoleSpacingMm)}&nbsp;mm ·{' '}
+            {TRACK_LENGTH} holes × 3 lanes · {LAYOUT_LABELS[layout].toLowerCase()} layout
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -125,8 +124,8 @@ export function HexagonApp() {
         />
       </main>
       <p className="sr-only">
-        {layout.segmentsPerRound} segments per turn, path offset{' '}
-        {layout.pathStartOffsetInRadians} radians
+        {layoutConfig.segmentsPerRound} segments per turn, path offset{' '}
+        {layoutConfig.pathStartOffsetInRadians} radians
       </p>
     </div>
   )

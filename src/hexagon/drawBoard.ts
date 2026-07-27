@@ -1,53 +1,105 @@
-import {
-  CENTER_CROSS_HALF_LENGTH_CM,
-  DARK_RADIAL_LINE_COLOR,
-  HEXAGON_RING_CIRCUMRADIUS_CM,
-  INNER_CIRCUMRADIUS_CM,
-  LINE_COLOR,
-  OUTER_CIRCUMRADIUS_CM,
-  RADIAL_LINE_COUNT,
-  VERTEX_LINE_COLOR,
-  centerCrossSegments,
-  hexagonVertices,
-  radialSegments,
-} from './geometry'
+import { BOARD_OUTLINE_LINE_WIDTH_PX, LINE_COLOR } from './geometry'
 import { drawBoardHolesCanvas, holeSvgElements } from './drawHoles'
 import { drawLaneBackgroundsCanvas, laneBackgroundSvgElements } from './drawLanes'
-import type { CribbageBoard } from './types'
+import { polarToCanvas } from './polar'
+import type { BoardOutline, CribbageBoard, PolarPoint } from './types'
 
-function strokeHexagon(
-  ctx: CanvasRenderingContext2D,
+function outlineCanvasPoints(
   cx: number,
   cy: number,
-  radius: number,
+  outline: BoardOutline,
+  unitsPerMm: number,
+): [number, number][] {
+  return outline.vertices.map((vertex) => polarToCanvas(cx, cy, vertex, unitsPerMm))
+}
+
+function polarLineCanvasPoints(
+  cx: number,
+  cy: number,
+  start: PolarPoint,
+  end: PolarPoint,
+  unitsPerMm: number,
+): [[number, number], [number, number]] {
+  return [polarToCanvas(cx, cy, start, unitsPerMm), polarToCanvas(cx, cy, end, unitsPerMm)]
+}
+
+function strokePolylineCanvas(
+  ctx: CanvasRenderingContext2D,
+  points: [number, number][],
   lineWidth: number,
+  strokeStyle: string,
+  closePath: boolean,
 ) {
-  const vertices = hexagonVertices(cx, cy, radius)
+  if (points.length < 2) return
+
+  ctx.strokeStyle = strokeStyle
   ctx.beginPath()
-  ctx.moveTo(vertices[0][0], vertices[0][1])
-  for (let i = 1; i < vertices.length; i++) {
-    ctx.lineTo(vertices[i][0], vertices[i][1])
+  ctx.moveTo(points[0][0], points[0][1])
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(points[i][0], points[i][1])
   }
-  ctx.closePath()
+  if (closePath) ctx.closePath()
   ctx.lineWidth = lineWidth
   ctx.stroke()
 }
 
-function strokeCenterCross(
+function strokeLineCanvas(
+  ctx: CanvasRenderingContext2D,
+  start: [number, number],
+  end: [number, number],
+  lineWidth: number,
+  strokeStyle: string,
+) {
+  strokePolylineCanvas(ctx, [start, end], lineWidth, strokeStyle, false)
+}
+
+function strokeOutlineCanvas(
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,
-  halfLength: number,
+  outline: BoardOutline,
+  unitsPerMm: number,
   lineWidth: number,
+  strokeStyle: string,
 ) {
-  const { horizontal, vertical } = centerCrossSegments(cx, cy, halfLength)
-  ctx.beginPath()
-  ctx.moveTo(horizontal[0][0], horizontal[0][1])
-  ctx.lineTo(horizontal[1][0], horizontal[1][1])
-  ctx.moveTo(vertical[0][0], vertical[0][1])
-  ctx.lineTo(vertical[1][0], vertical[1][1])
-  ctx.lineWidth = lineWidth
-  ctx.stroke()
+  strokePolylineCanvas(
+    ctx,
+    outlineCanvasPoints(cx, cy, outline, unitsPerMm),
+    lineWidth,
+    strokeStyle,
+    true,
+  )
+
+  for (const line of outline.sectionLines) {
+    const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, unitsPerMm)
+    strokeLineCanvas(ctx, start, end, lineWidth, strokeStyle)
+  }
+}
+
+function outlineSvgElements(
+  cx: number,
+  cy: number,
+  outline: BoardOutline,
+  unitsPerMm: number,
+  stroke: string,
+  strokeWidth: number,
+): string {
+  const polygonPoints = outlineCanvasPoints(cx, cy, outline, unitsPerMm)
+    .map(([x, y]) => `${x},${y}`)
+    .join(' ')
+
+  const elements = [
+    `<polygon points="${polygonPoints}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}"/>`,
+  ]
+
+  for (const line of outline.sectionLines) {
+    const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, unitsPerMm)
+    elements.push(
+      `<line x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`,
+    )
+  }
+
+  return elements.join('\n')
 }
 
 export function drawBoardCanvas(
@@ -58,44 +110,24 @@ export function drawBoardCanvas(
   unitsPerCm: number,
 ) {
   const unitsPerMm = unitsPerCm / 10
-  const outerRadius = OUTER_CIRCUMRADIUS_CM * unitsPerCm
-  const innerRadius = INNER_CIRCUMRADIUS_CM * unitsPerCm
+  const holeLineWidth = Math.max(0.5, unitsPerCm * 0.04)
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
   ctx.lineCap = 'round'
-  const radialLineWidth = Math.max(1, unitsPerCm * 0.08)
-  const hexLineWidth = Math.max(1.5, unitsPerCm * 0.12)
-  const crossLineWidth = Math.max(0.5, unitsPerCm * 0.04)
-  const crossHalfLength = CENTER_CROSS_HALF_LENGTH_CM * unitsPerCm
-  const holeLineWidth = Math.max(0.5, unitsPerCm * 0.04)
 
   drawLaneBackgroundsCanvas(ctx, cx, cy, board, unitsPerMm)
-
-  for (const { start, end, isGray } of radialSegments(
+  strokeOutlineCanvas(
+    ctx,
     cx,
     cy,
-    innerRadius,
-    outerRadius,
-    RADIAL_LINE_COUNT,
-  )) {
-    ctx.strokeStyle = isGray ? VERTEX_LINE_COLOR : DARK_RADIAL_LINE_COLOR
-    ctx.lineWidth = isGray ? radialLineWidth : radialLineWidth / 2
-    ctx.beginPath()
-    ctx.moveTo(start[0], start[1])
-    ctx.lineTo(end[0], end[1])
-    ctx.stroke()
-  }
-
-  ctx.strokeStyle = DARK_RADIAL_LINE_COLOR
-  for (const radius of HEXAGON_RING_CIRCUMRADIUS_CM.map((ringRadius) => ringRadius * unitsPerCm)) {
-    strokeHexagon(ctx, cx, cy, radius, hexLineWidth)
-  }
-
-  ctx.strokeStyle = LINE_COLOR
-  strokeCenterCross(ctx, cx, cy, crossHalfLength, crossLineWidth)
+    board.outline,
+    unitsPerMm,
+    BOARD_OUTLINE_LINE_WIDTH_PX,
+    LINE_COLOR,
+  )
   drawBoardHolesCanvas(ctx, cx, cy, board, unitsPerMm, LINE_COLOR, holeLineWidth)
 }
 
@@ -106,42 +138,42 @@ export function boardSvgElements(
   unitsPerCm: number,
 ): string {
   const unitsPerMm = unitsPerCm / 10
-  const outerRadius = OUTER_CIRCUMRADIUS_CM * unitsPerCm
-  const innerRadius = INNER_CIRCUMRADIUS_CM * unitsPerCm
   const elements: string[] = []
 
   elements.push(laneBackgroundSvgElements(cx, cy, board, unitsPerMm))
-
-  for (const { start, end, isGray } of radialSegments(
-    cx,
-    cy,
-    innerRadius,
-    outerRadius,
-    RADIAL_LINE_COUNT,
-  )) {
-    const color = isGray ? VERTEX_LINE_COLOR : DARK_RADIAL_LINE_COLOR
-    const width = isGray ? 0.15 : 0.075
-    elements.push(
-      `<line x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}" stroke="${color}" stroke-width="${width * unitsPerCm}"/>`,
-    )
-  }
-
-  for (const radius of HEXAGON_RING_CIRCUMRADIUS_CM.map((ringRadius) => ringRadius * unitsPerCm)) {
-    const vertices = hexagonVertices(cx, cy, radius)
-    const points = vertices.map(([x, y]) => `${x},${y}`).join(' ')
-    elements.push(
-      `<polygon points="${points}" fill="none" stroke="${DARK_RADIAL_LINE_COLOR}" stroke-width="${0.12 * unitsPerCm}"/>`,
-    )
-  }
-
-  const crossHalf = CENTER_CROSS_HALF_LENGTH_CM * unitsPerCm
-  const { horizontal, vertical } = centerCrossSegments(cx, cy, crossHalf)
   elements.push(
-    `<line x1="${horizontal[0][0]}" y1="${horizontal[0][1]}" x2="${horizontal[1][0]}" y2="${horizontal[1][1]}" stroke="${LINE_COLOR}" stroke-width="${0.04 * unitsPerCm}"/>`,
-    `<line x1="${vertical[0][0]}" y1="${vertical[0][1]}" x2="${vertical[1][0]}" y2="${vertical[1][1]}" stroke="${LINE_COLOR}" stroke-width="${0.04 * unitsPerCm}"/>`,
+    outlineSvgElements(
+      cx,
+      cy,
+      board.outline,
+      unitsPerMm,
+      LINE_COLOR,
+      BOARD_OUTLINE_LINE_WIDTH_PX,
+    ),
   )
-
   elements.push(holeSvgElements(cx, cy, board, unitsPerMm, LINE_COLOR))
 
   return elements.join('\n')
+}
+
+export function drawBoardOutlinePdf(
+  pdf: import('jspdf').jsPDF,
+  cx: number,
+  cy: number,
+  outline: BoardOutline,
+) {
+  const points = outlineCanvasPoints(cx, cy, outline, 1)
+  if (points.length >= 2) {
+    pdf.moveTo(points[0][0], points[0][1])
+    for (let i = 1; i < points.length; i++) {
+      pdf.lineTo(points[i][0], points[i][1])
+    }
+    pdf.lineTo(points[0][0], points[0][1])
+    pdf.stroke()
+  }
+
+  for (const line of outline.sectionLines) {
+    const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, 1)
+    pdf.line(start[0], start[1], end[0], end[1])
+  }
 }
