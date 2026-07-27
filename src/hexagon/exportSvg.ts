@@ -1,6 +1,7 @@
 import { boardSvgElements } from './drawBoard'
+import { exportFileName } from './exportFileName'
 import { generateCribbageBoard } from './generateBoard'
-import { DIAGRAM_HEIGHT_CM, DIAGRAM_WIDTH_CM, OUTLINE_FLAT_TO_FLAT_CM } from './geometry'
+import { DIAGRAM_HEIGHT_CM, DIAGRAM_WIDTH_CM } from './geometry'
 import { DEFAULT_LAYOUT, type LayoutVariant } from './layouts'
 
 export function exportHexagonSvg(layout: LayoutVariant = DEFAULT_LAYOUT) {
@@ -21,7 +22,7 @@ export function exportHexagonSvg(layout: LayoutVariant = DEFAULT_LAYOUT) {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `hexagon-${layout}-${OUTLINE_FLAT_TO_FLAT_CM.toFixed(1)}cm-outline.svg`
+  link.download = `${exportFileName(board)}.svg`
   link.click()
   URL.revokeObjectURL(url)
 }

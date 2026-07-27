@@ -2,8 +2,9 @@ import { jsPDF } from 'jspdf'
 import { drawBoardOutlinePdf } from './drawBoard'
 import { drawBoardHolesPdf } from './drawHoles'
 import { drawLaneBackgroundsPdf } from './drawLanes'
+import { exportFileName } from './exportFileName'
 import { generateCribbageBoard } from './generateBoard'
-import { DIAGRAM_HEIGHT_CM, DIAGRAM_WIDTH_CM, OUTLINE_FLAT_TO_FLAT_CM, BOARD_OUTLINE_LINE_WIDTH_MM } from './geometry'
+import { DIAGRAM_HEIGHT_CM, DIAGRAM_WIDTH_CM, BOARD_OUTLINE_LINE_WIDTH_MM } from './geometry'
 import { DEFAULT_LAYOUT, type LayoutVariant } from './layouts'
 
 const CM_TO_MM = 10
@@ -31,5 +32,5 @@ export function exportHexagonPdf(layout: LayoutVariant = DEFAULT_LAYOUT) {
 
   drawBoardHolesPdf(pdf, cx, cy, board)
 
-  pdf.save(`hexagon-${layout}-${OUTLINE_FLAT_TO_FLAT_CM.toFixed(1)}cm-outline.pdf`)
+  pdf.save(`${exportFileName(board)}.pdf`)
 }
