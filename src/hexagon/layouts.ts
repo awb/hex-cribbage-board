@@ -21,7 +21,7 @@ export const LAYOUTS: Record<LayoutVariant, LayoutConfig> = {
   },
 }
 
-export const DEFAULT_LAYOUT: LayoutVariant = 'dodecagonal'
+export const DEFAULT_LAYOUT: LayoutVariant = 'hexagonal'
 
 export function layoutConfig(variant: LayoutVariant): LayoutConfig {
   return LAYOUTS[variant]

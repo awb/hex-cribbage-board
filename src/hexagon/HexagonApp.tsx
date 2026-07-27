@@ -76,6 +76,7 @@ export function HexagonApp() {
             {INNER_CIRCUMRADIUS_CM}&nbsp;cm inner circumradius · {OUTER_FLAT_TO_FLAT_CM}&nbsp;cm outer
             flat-to-flat · {RADIAL_LINE_COUNT} radial lines · {TRACK_LENGTH} holes × 3 lanes ·{' '}
             {LAYOUT_LABELS[layout].toLowerCase()} layout
+
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -124,8 +125,8 @@ export function HexagonApp() {
         />
       </main>
       <p className="sr-only">
-        {layoutConfig.segmentsPerRound} segments per turn, path offset{' '}
-        {layoutConfig.pathStartOffsetInRadians} radians
+        {layout.segmentsPerRound} segments per turn, path offset{' '}
+        {layout.pathStartOffsetInRadians} radians
       </p>
     </div>
   )
