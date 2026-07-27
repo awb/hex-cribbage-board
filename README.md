@@ -18,8 +18,7 @@ Pushes to `main` build and deploy automatically via GitHub Actions.
 1. In the repo on GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**
 2. Merge to `main` (or push directly) to trigger a deploy
 3. Open the cribbage board at:
-
-   `https://awb.github.io/hex-cribbage-board/hexagon.html`
+  `https://awb.github.io/hex-cribbage-board/hexagon.html`
 
 Local production preview:
 
@@ -37,19 +36,23 @@ Then open `/hex-cribbage-board/hexagon.html` on the preview server.
 - Increasing `theta` produces a **clockwise** spiral.
 - Holes lie on straight lines between segment endpoints (interpolated in Cartesian space, stored as polar).
 
+
+
 ## Layout variants
 
 Two layouts share the same board constants (`TRACK_LENGTH`, `LANE_COUNT`, `TRACK_SPACING`, etc.) and both produce 120 holes per lane in groups of 5 via `generateSegment`. They differ in angular alignment to the hex template:
 
-| | **Dodecagonal** (default) | **Hexagonal** |
-|---|---|---|
-| `segmentsPerRound` | 12 | 12 |
-| `pathStartOffsetInRadians` | 0 | π/6 |
-| Micro-segment span `deltaTheta` | π/6 | π/6 |
-| Macro hex edge span | π/6 (vertex to vertex) | π/3 (pairs of micro-segments; first/last are half-edges) |
-| Segments per lane | 24 | 24 |
-| Holes per lane | 120 | 120 |
-| Complete turns | 2 | 2 |
+
+|                                 | **Dodecagonal** (default) | **Hexagonal**                                            |
+| ------------------------------- | ------------------------- | -------------------------------------------------------- |
+| `segmentsPerRound`              | 12                        | 12                                                       |
+| `pathStartOffsetInRadians`      | 0                         | π/6                                                      |
+| Micro-segment span `deltaTheta` | π/6                       | π/6                                                      |
+| Macro hex edge span             | π/6 (vertex to vertex)    | π/3 (pairs of micro-segments; first/last are half-edges) |
+| Segments per lane               | 24                        | 24                                                       |
+| Holes per lane                  | 120                       | 120                                                      |
+| Complete turns                  | 2                         | 2                                                        |
+
 
 Hexagonal lanes start and end at edge midpoints (π/6 between vertices at 0 and π/3). Each interior hex edge is two consecutive 5-hole segments; the first and last segment of each lane are the outer half-edges.
 
@@ -72,6 +75,8 @@ const LAYOUTS: Record<LayoutVariant, LayoutConfig> = {
 const DEFAULT_LAYOUT: LayoutVariant = 'dodecagonal'
 ```
 
+
+
 ## Abstract design
 
 The abstractions are:
@@ -82,7 +87,10 @@ The abstractions are:
 - **Segment** — has a defined start point and end point and contains 5 holes in a straight line, with padding between groups of holes proportionate to spacing within a group by constant multiplier `PADDING`.
 - **Hole** — a point at polar coordinate `(r, theta)`. The drawn representation is a circle 3 mm in diameter centered on the point and a cross comprised of 4 mm lines intersecting at the point.
 
-## Constants
+
+## Functional design
+
+### Constants
 
 Shared by both layouts:
 
@@ -108,7 +116,9 @@ Derived values (computed from active layout):
 - `vertexDeltaRadius = turnDeltaRadius / segmentsPerRound`
 - `segmentCount / segmentsPerRound = 2` complete turns for both layouts
 
-## Types
+
+
+### Types
 
 ```typescript
 type PolarPoint = {
@@ -138,9 +148,13 @@ type Segment = {
 }
 ```
 
-## Functions
 
-### `generateCribbageBoard`
+
+### Functions
+
+
+
+#### `generateCribbageBoard`
 
 Generate a track spiraling clockwise in from the initial location with 3 interleaved lanes and 120 holes per lane.
 
@@ -163,7 +177,9 @@ const track = generateTrack(
 return { initialRadius, layout, track }
 ```
 
-### `generateTrack`
+
+
+#### `generateTrack`
 
 Generate 3 interleaved lanes offset by `LANE_SPACING` mm. Applies `pathStartOffsetInRadians` to each lane start angle. Successive spirals of the track should not overlap but leave `TRACK_SPACING` between successive turns.
 
@@ -178,7 +194,9 @@ function generateTrack(
 ): Track
 ```
 
-### `generateLane`
+
+
+#### `generateLane`
 
 Build a lane by calling the layout's `spiral` function for vertex endpoints, then `generateSegment` between each consecutive pair (always 5 holes per segment).
 
@@ -191,11 +209,13 @@ function generateLane(
 ): Pick<Lane, 'segments'>
 ```
 
-### Spiral vertex functions
 
-**`dodecagonalSpiral`** — returns 25 vertices of a 12-sided spiral (π/6 steps) from the start point.
 
-**`hexagonalSpiral`** — builds 14 vertices of a 6-sided macro spiral (π/3 steps), inserts Cartesian midpoints between each consecutive pair (27 points), omits the first and last points, and returns 25 vertices for 24 segments.
+#### Spiral vertex functions
+
+`dodecagonalSpiral` — returns 25 vertices of a 12-sided spiral (π/6 steps) from the start point.
+
+`hexagonalSpiral` — builds 14 vertices of a 6-sided macro spiral (π/3 steps), inserts Cartesian midpoints between each consecutive pair (13 additional points), omits the first and last points, and returns 25 vertices for 24 segments.
 
 ```typescript
 type SpiralFn = (
@@ -203,11 +223,14 @@ type SpiralFn = (
   deltaRadius: number,
   deltaTheta: number,
 ) => PolarPoint[]
+
+SpiralFn dodecagonalSpiral;
+SpiralFn hexagonalSpiral;
 ```
 
 Each `LayoutConfig` includes the `spiral` function to use (`dodecagonalSpiral` or `hexagonalSpiral`).
 
-### `generateSegment`
+#### `generateSegment`
 
 Calculate hole locations along a straight segment between successive vertices of a spiral. Holes are arranged in groups of 5 separated by padding proportionate to the spacing between holes. Always called with `n = HOLES_PER_GROUP` (5).
 
@@ -222,6 +245,8 @@ function generateSegment(
 ): Segment
 ```
 
+
+
 ## Rendering
 
 - **Hex template overlay** (for fabrication): inner and outer hex outlines, 72 radial lines, center cross (rotated π/6 behind track).
@@ -229,3 +254,4 @@ function generateSegment(
 - **Holes**: 3 mm circle + 4 mm cross at each hole location.
 - **Layout toggle**: dodecagonal / hexagonal.
 - **Exports**: canvas preview, PDF (print-ready), SVG (CAD transfer).
+

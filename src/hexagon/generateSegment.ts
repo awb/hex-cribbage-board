@@ -20,7 +20,7 @@ export function generateSegment(
   const length = Math.hypot(dx, dy)
 
   if (length === 0 || n === 0) {
-    return { start, end, holes: [] }
+    return { start, end, holes: [], minimumHoleSpacingMm: Infinity }
   }
 
   const numGroups = n / HOLES_PER_GROUP
@@ -47,5 +47,5 @@ export function generateSegment(
     return cartesianToPolarMm(x, y)
   })
 
-  return { start, end, holes }
+  return { start, end, holes, minimumHoleSpacingMm: holeSpacing }
 }

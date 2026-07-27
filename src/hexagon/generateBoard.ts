@@ -1,4 +1,5 @@
 import { INITIAL_RADIUS, TRACK_LENGTH, TURN_DELTA_RADIUS } from './constants'
+import { generateBoardOutline } from './generateBoardOutline'
 import { generateTrack } from './generateTrack'
 import { DEFAULT_LAYOUT, layoutConfig, type LayoutVariant } from './layouts'
 import type { CribbageBoard } from './types'
@@ -17,6 +18,7 @@ export function generateCribbageBoard(
   return {
     initialRadius,
     layout,
+    outline: generateBoardOutline(track),
     track,
   }
 }
