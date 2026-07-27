@@ -2,7 +2,7 @@ import { OUTLINE_RADIUS_MM, TRACK_SPACING } from './constants'
 import type { BoardOutline, PolarPoint, Track } from './types'
 
 /** Thetas of outer hex vertices that get section lines to the inner board radius. */
-export const SECTION_LINE_THETAS = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3] as const
+export const SECTION_LINE_THETAS = Array.from( { length: 3 }, (_, i) => ((2*i) * Math.PI) / 3 + Math.PI / 6 )
 
 export function innermostHoleRadiusMm(track: Pick<Track, 'lanes'>): number {
   let minR = Infinity
