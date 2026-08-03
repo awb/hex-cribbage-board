@@ -20,6 +20,7 @@ import {
 const LAYOUT_LABELS: Record<LayoutVariant, string> = {
   dodecagonal: 'Dodecagonal',
   hexagonal: 'Hexagonal',
+  hexagonalFromVertices: 'Hexagonal 2',
 }
 
 function formatMm(value: number): string {

@@ -37,7 +37,23 @@ export function dodecagonalSpiral(
  * so the path starts and ends on half-edges. Requires 14 macro vertices so that
  * expand (27 points) minus endpoints yields SPIRAL_VERTEX_COUNT (25).
  */
-export function hexagonalSpiral(
+export function hexagonalSpiralFromMidSides(
+  start: PolarPoint,
+  deltaRadius: number,
+  deltaTheta: number,
+): PolarPoint[] {
+  return hexagonalSpiralExpanded(start, deltaRadius, deltaTheta).slice(1, -1)
+}
+
+export function hexagonalSpiralFromVertices(
+  start: PolarPoint,
+  deltaRadius: number,
+  deltaTheta: number,
+): PolarPoint[] {
+  return hexagonalSpiralExpanded(start, deltaRadius, deltaTheta).slice(0, -2)
+}
+
+function hexagonalSpiralExpanded(
   start: PolarPoint,
   deltaRadius: number,
   deltaTheta: number,
@@ -51,5 +67,5 @@ export function hexagonalSpiral(
     theta: start.theta + i * macroDeltaTheta,
   }))
 
-  return expandWithMidpoints(macroVertices).slice(1, -1)
+  return expandWithMidpoints(macroVertices)
 }
