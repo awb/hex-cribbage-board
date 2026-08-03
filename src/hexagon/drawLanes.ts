@@ -1,4 +1,5 @@
 import { LANE_SPACING } from './constants'
+import { LANE_SPIRAL_LINE_COLOR } from './geometry'
 import { polarToCanvas } from './polar'
 import type { CribbageBoard, Lane, PolarPoint } from './types'
 
@@ -101,6 +102,89 @@ function pdfFillColor(color: string): [number, number, number] {
   const { r, g, b, a } = parseRgba(color)
   const blend = (channel: number) => Math.round(channel * a + 255 * (1 - a))
   return [blend(r), blend(g), blend(b)]
+}
+
+function laneHoleSequence(lane: Lane): PolarPoint[] {
+  return lane.segments.flatMap((segment) => segment.holes)
+}
+
+function laneSpiralCanvasPoints(
+  cx: number,
+  cy: number,
+  lane: Lane,
+  unitsPerMm: number,
+): [number, number][] {
+  return laneHoleSequence(lane).map((hole) => polarToCanvas(cx, cy, hole, unitsPerMm))
+}
+
+export function drawLaneSpiralLinesCanvas(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  board: CribbageBoard,
+  unitsPerMm: number,
+  lineWidth: number,
+) {
+  ctx.strokeStyle = LANE_SPIRAL_LINE_COLOR
+  ctx.lineWidth = lineWidth
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  for (const lane of board.track.lanes) {
+    const points = laneSpiralCanvasPoints(cx, cy, lane, unitsPerMm)
+    if (points.length < 2) continue
+
+    ctx.beginPath()
+    ctx.moveTo(points[0][0], points[0][1])
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i][0], points[i][1])
+    }
+    ctx.stroke()
+  }
+}
+
+export function laneSpiralLineSvgElements(
+  cx: number,
+  cy: number,
+  board: CribbageBoard,
+  unitsPerMm: number,
+  strokeWidth: number,
+): string {
+  return board.track.lanes
+    .map((lane) => {
+      const points = laneSpiralCanvasPoints(cx, cy, lane, unitsPerMm)
+      if (points.length < 2) return ''
+
+      const pathData = points
+        .map(([x, y], index) => `${index === 0 ? 'M' : 'L'} ${x} ${y}`)
+        .join(' ')
+
+      return `<path d="${pathData}" fill="none" stroke="${LANE_SPIRAL_LINE_COLOR}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/>`
+    })
+    .filter(Boolean)
+    .join('\n')
+}
+
+export function drawLaneSpiralLinesPdf(
+  pdf: import('jspdf').jsPDF,
+  cx: number,
+  cy: number,
+  board: CribbageBoard,
+) {
+  const gray: [number, number, number] = [161, 161, 170]
+  pdf.setDrawColor(...gray)
+  pdf.setLineWidth(0.15)
+
+  for (const lane of board.track.lanes) {
+    const points = laneSpiralCanvasPoints(cx, cy, lane, 1)
+    if (points.length < 2) continue
+
+    pdf.moveTo(points[0][0], points[0][1])
+    for (let i = 1; i < points.length; i++) {
+      pdf.lineTo(points[i][0], points[i][1])
+    }
+    pdf.stroke()
+  }
 }
 
 export function drawLaneBackgroundsCanvas(

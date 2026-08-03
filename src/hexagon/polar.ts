@@ -1,4 +1,5 @@
 import type { CartesianPoint, PolarPoint } from './types'
+import { BOARD_DRAWING_ROTATION_RAD } from './geometry'
 
 /** Convert polar mm coordinates to Cartesian mm (theta = 0 at the top vertex). */
 export function polarToCartesianMm(point: PolarPoint): CartesianPoint {
@@ -29,5 +30,17 @@ export function polarToCanvas(
   unitsPerMm: number,
 ): [number, number] {
   const { x, y } = polarToCartesianMm(point)
-  return [cx + x * unitsPerMm, cy + y * unitsPerMm]
+  let px = cx + x * unitsPerMm
+  let py = cy + y * unitsPerMm
+
+  if (BOARD_DRAWING_ROTATION_RAD !== 0) {
+    const dx = px - cx
+    const dy = py - cy
+    const cos = Math.cos(BOARD_DRAWING_ROTATION_RAD)
+    const sin = Math.sin(BOARD_DRAWING_ROTATION_RAD)
+    px = cx + dx * cos - dy * sin
+    py = cy + dx * sin + dy * cos
+  }
+
+  return [px, py]
 }
