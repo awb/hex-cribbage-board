@@ -10,6 +10,11 @@ export const DIAGRAM_HEIGHT_CM = 2 * OUTLINE_RADIUS_CM
 
 export const LINE_COLOR = '#18181b'
 
+/** Rotate the board drawing 30° counter-clockwise on the page. */
+export const BOARD_DRAWING_ROTATION_RAD = -Math.PI / 6
+
+export const LANE_SPIRAL_LINE_COLOR = '#a1a1aa'
+
 /** Board outline and section line stroke width in CSS pixels. */
 export const BOARD_OUTLINE_LINE_WIDTH_PX = 2
 

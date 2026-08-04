@@ -10,10 +10,17 @@ import {
   type LayoutVariant,
 } from './layouts'
 import { DIAGRAM_HEIGHT_CM, DIAGRAM_WIDTH_CM, OUTLINE_FLAT_TO_FLAT_CM } from './geometry'
+import {
+  BOARD_REPRESENTATIONS,
+  DEFAULT_REPRESENTATION,
+  REPRESENTATION_LABELS,
+  type BoardRepresentation,
+} from './representations'
 
 const LAYOUT_LABELS: Record<LayoutVariant, string> = {
   dodecagonal: 'Dodecagonal',
   hexagonal: 'Hexagonal',
+  hexagonalFromVertices: 'Hexagonal 2',
 }
 
 function formatMm(value: number): string {
@@ -24,6 +31,7 @@ export function HexagonApp() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [layout, setLayout] = useState<LayoutVariant>(DEFAULT_LAYOUT)
+  const [representation, setRepresentation] = useState<BoardRepresentation>(DEFAULT_REPRESENTATION)
   const board = useMemo(() => generateCribbageBoard(undefined, layout), [layout])
 
   const redraw = useCallback(() => {
@@ -50,8 +58,8 @@ export function HexagonApp() {
     if (!ctx) return
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    drawBoardCanvas(ctx, drawW / 2, drawH / 2, board, unitsPerCm)
-  }, [board])
+    drawBoardCanvas(ctx, drawW / 2, drawH / 2, board, unitsPerCm, representation)
+  }, [board, representation])
 
   useEffect(() => {
     redraw()
@@ -75,7 +83,8 @@ export function HexagonApp() {
             {OUTLINE_FLAT_TO_FLAT_CM.toFixed(1)}&nbsp;cm flat-to-flat · track{' '}
             {formatMm(board.track.outermostTrackRadiusMm)}–{formatMm(board.track.innermostTrackRadiusMm)}
             &nbsp;mm · min hole spacing {formatMm(board.track.minimumHoleSpacingMm)}&nbsp;mm ·{' '}
-            {TRACK_LENGTH} holes × 3 lanes · {LAYOUT_LABELS[layout].toLowerCase()} layout
+            {TRACK_LENGTH} holes × 3 lanes · {LAYOUT_LABELS[layout].toLowerCase()} layout ·{' '}
+            {REPRESENTATION_LABELS[representation].toLowerCase()} view
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -97,16 +106,34 @@ export function HexagonApp() {
               </button>
             ))}
           </fieldset>
+          <fieldset className="flex items-center gap-1 rounded-lg border border-zinc-300 p-1">
+            <legend className="sr-only">Representation</legend>
+            {BOARD_REPRESENTATIONS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={representation === option}
+                onClick={() => setRepresentation(option)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                  representation === option
+                    ? 'bg-zinc-900 text-white'
+                    : 'text-zinc-700 hover:bg-zinc-100'
+                }`}
+              >
+                {REPRESENTATION_LABELS[option]}
+              </button>
+            ))}
+          </fieldset>
           <button
             type="button"
-            onClick={() => exportHexagonPdf(layout)}
+            onClick={() => exportHexagonPdf(layout, representation)}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
           >
             Export PDF
           </button>
           <button
             type="button"
-            onClick={() => exportHexagonSvg(layout)}
+            onClick={() => exportHexagonSvg(layout, representation)}
             className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
           >
             Export SVG
@@ -125,7 +152,7 @@ export function HexagonApp() {
       </main>
       <p className="sr-only">
         {layoutConfig.segmentsPerRound} segments per turn, path offset{' '}
-        {layoutConfig.pathStartOffsetInRadians} radians
+        {layoutConfig.pathStartOffsetInRadians} radians, {representation} representation
       </p>
     </div>
   )

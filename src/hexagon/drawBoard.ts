@@ -1,8 +1,18 @@
 import { BOARD_OUTLINE_LINE_WIDTH_PX, LINE_COLOR } from './geometry'
-import { drawBoardHolesCanvas, holeSvgElements } from './drawHoles'
-import { drawLaneBackgroundsCanvas, laneBackgroundSvgElements } from './drawLanes'
+import { drawBoardHolesCanvas, holeSvgElements, type HoleStyle } from './drawHoles'
+import {
+  drawLaneBackgroundsCanvas,
+  drawLaneSpiralLinesCanvas,
+  laneBackgroundSvgElements,
+  laneSpiralLineSvgElements,
+} from './drawLanes'
 import { polarToCanvas } from './polar'
+import type { BoardRepresentation } from './representations'
 import type { BoardOutline, CribbageBoard, PolarPoint } from './types'
+
+function holeStyleForRepresentation(representation: BoardRepresentation): HoleStyle {
+  return representation === 'drill-template' ? 'crosshair' : 'disk'
+}
 
 function outlineCanvasPoints(
   cx: number,
@@ -108,9 +118,12 @@ export function drawBoardCanvas(
   cy: number,
   board: CribbageBoard,
   unitsPerCm: number,
+  representation: BoardRepresentation,
 ) {
   const unitsPerMm = unitsPerCm / 10
   const holeLineWidth = Math.max(0.5, unitsPerCm * 0.04)
+  const spiralLineWidth = Math.max(0.75, unitsPerCm * 0.06)
+  const holeStyle = holeStyleForRepresentation(representation)
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   ctx.fillStyle = '#ffffff'
@@ -118,7 +131,14 @@ export function drawBoardCanvas(
 
   ctx.lineCap = 'round'
 
-  drawLaneBackgroundsCanvas(ctx, cx, cy, board, unitsPerMm)
+  if (representation === 'color') {
+    drawLaneBackgroundsCanvas(ctx, cx, cy, board, unitsPerMm)
+  }
+
+  if (representation === 'lined') {
+    drawLaneSpiralLinesCanvas(ctx, cx, cy, board, unitsPerMm, spiralLineWidth)
+  }
+
   strokeOutlineCanvas(
     ctx,
     cx,
@@ -128,7 +148,17 @@ export function drawBoardCanvas(
     BOARD_OUTLINE_LINE_WIDTH_PX,
     LINE_COLOR,
   )
-  drawBoardHolesCanvas(ctx, cx, cy, board, unitsPerMm, LINE_COLOR, holeLineWidth)
+  drawBoardHolesCanvas(
+    ctx,
+    cx,
+    cy,
+    board,
+    unitsPerMm,
+    holeStyle,
+    LINE_COLOR,
+    LINE_COLOR,
+    holeLineWidth,
+  )
 }
 
 export function boardSvgElements(
@@ -136,11 +166,20 @@ export function boardSvgElements(
   cy: number,
   board: CribbageBoard,
   unitsPerCm: number,
+  representation: BoardRepresentation,
 ): string {
   const unitsPerMm = unitsPerCm / 10
+  const holeStyle = holeStyleForRepresentation(representation)
   const elements: string[] = []
 
-  elements.push(laneBackgroundSvgElements(cx, cy, board, unitsPerMm))
+  if (representation === 'color') {
+    elements.push(laneBackgroundSvgElements(cx, cy, board, unitsPerMm))
+  }
+
+  if (representation === 'lined') {
+    elements.push(laneSpiralLineSvgElements(cx, cy, board, unitsPerMm, 0.06 * unitsPerCm))
+  }
+
   elements.push(
     outlineSvgElements(
       cx,
@@ -151,7 +190,7 @@ export function boardSvgElements(
       BOARD_OUTLINE_LINE_WIDTH_PX,
     ),
   )
-  elements.push(holeSvgElements(cx, cy, board, unitsPerMm, LINE_COLOR))
+  elements.push(holeSvgElements(cx, cy, board, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR))
 
   return elements.join('\n')
 }
