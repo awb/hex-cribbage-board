@@ -8,7 +8,7 @@ export const OUTLINE_RADIUS_MM = 120
 export const INITIAL_RADIUS = OUTLINE_RADIUS_MM - 2 * TRACK_SPACING
 
 export const TRACK_LENGTH = 120
-export const PADDING = 2
+export const PADDING = 1.6
 export const HOLES_PER_GROUP = 5
 
 /** Every spiral must yield this many vertices (24 segments × 5 holes = 120 holes). */
