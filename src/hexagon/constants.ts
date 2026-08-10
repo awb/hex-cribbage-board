@@ -1,11 +1,11 @@
-export const LANE_SPACING = 5
-export const TRACK_SPACING = 0.6 * LANE_SPACING
+export const LANE_SPACING = 6
+export const TRACK_SPACING = 1 * LANE_SPACING
 
 /** Outer board hexagon circumradius in mm (vertex at theta = 0). */
 export const OUTLINE_RADIUS_MM = 120
 
 /** Outermost lane start radius: at least 2× track spacing inside the board outline. */
-export const INITIAL_RADIUS = OUTLINE_RADIUS_MM - 2 * TRACK_SPACING
+export const INITIAL_RADIUS = OUTLINE_RADIUS_MM - 1 * TRACK_SPACING
 
 export const TRACK_LENGTH = 120
 export const PADDING = 1.6
