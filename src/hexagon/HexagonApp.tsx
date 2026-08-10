@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { OUTLINE_RADIUS_MM, TRACK_LENGTH } from './constants'
+import { LANE_COUNT, LANE_SPACING, OUTLINE_RADIUS_MM, TRACK_LENGTH, TRACK_SPACING } from './constants'
 import { drawBoardCanvas } from './drawBoard'
 import { exportHexagonPdf } from './exportPdf'
 import { exportHexagonSvg } from './exportSvg'
@@ -7,6 +7,7 @@ import { generateCribbageBoard } from './generateBoard'
 import {
   DEFAULT_LAYOUT,
   LAYOUTS,
+  LAYOUT_LABELS,
   type LayoutVariant,
 } from './layouts'
 import { DIAGRAM_HEIGHT_CM, DIAGRAM_WIDTH_CM, OUTLINE_FLAT_TO_FLAT_CM } from './geometry'
@@ -17,11 +18,7 @@ import {
   type BoardRepresentation,
 } from './representations'
 
-const LAYOUT_LABELS: Record<LayoutVariant, string> = {
-  dodecagonal: 'Dodecagonal',
-  hexagonal: 'Hexagonal',
-  hexagonalFromVertices: 'Hexagonal 2',
-}
+
 
 function formatMm(value: number): string {
   return value.toFixed(1)
@@ -78,14 +75,35 @@ export function HexagonApp() {
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 bg-white px-6 py-4">
         <div>
           <h1 className="text-lg font-semibold">Hex Cribbage Board</h1>
-          <p className="text-sm text-zinc-500">
-            {formatMm(OUTLINE_RADIUS_MM)}&nbsp;mm outline circumradius ·{' '}
-            {OUTLINE_FLAT_TO_FLAT_CM.toFixed(1)}&nbsp;cm flat-to-flat · track{' '}
-            {formatMm(board.track.outermostTrackRadiusMm)}–{formatMm(board.track.innermostTrackRadiusMm)}
-            &nbsp;mm · min hole spacing {formatMm(board.track.minimumHoleSpacingMm)}&nbsp;mm ·{' '}
-            {TRACK_LENGTH} holes × 3 lanes · {LAYOUT_LABELS[layout].toLowerCase()} layout ·{' '}
-            {REPRESENTATION_LABELS[representation].toLowerCase()} view
-          </p>
+          <ul className="mt-1 flex flex-wrap gap-2">
+            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
+              {formatMm(OUTLINE_RADIUS_MM)} mm outline
+            </li>
+            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
+              {OUTLINE_FLAT_TO_FLAT_CM.toFixed(1)} cm flat-to-flat
+            </li>
+            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
+              track {formatMm(board.track.outermostTrackRadiusMm)}–{formatMm(board.track.innermostTrackRadiusMm)} mm
+            </li>
+            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
+              min hole spacing {formatMm(board.track.minimumHoleSpacingMm)} mm
+            </li>
+            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
+              track spacing {formatMm(TRACK_SPACING)} mm
+            </li>
+            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
+              lane spacing {formatMm(LANE_SPACING)} mm
+            </li>
+            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
+              {TRACK_LENGTH} holes × {LANE_COUNT} lanes
+            </li>
+            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
+              {LAYOUT_LABELS[layout].toLowerCase()} layout
+            </li>
+            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
+              {REPRESENTATION_LABELS[representation].toLowerCase()} view
+            </li>
+          </ul>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <fieldset className="flex items-center gap-1 rounded-lg border border-zinc-300 p-1">
