@@ -11,6 +11,8 @@ npm run dev
 
 Open `hexagon.html` in the browser (Vite prints the local URL, something like [http://localhost:5173/hexagon.html](http://localhost:5173/hexagon.html)).
 
+This app is deployed at [https://awb.github.io/hex-cribbage-board/hexagon.html.](https://awb.github.io/hex-cribbage-board/hexagon.html)
+
 ## Deployment (GitHub Pages)
 
 Pushes to `main` build and deploy automatically via GitHub Actions.
@@ -88,7 +90,10 @@ The abstractions are:
 - **Hole** — a point at polar coordinate `(r, theta)`. The drawn representation is a circle 3 mm in diameter centered on the point and a cross comprised of 4 mm lines intersecting at the point.
 
 
+
 ## Functional design
+
+
 
 ### Constants
 
