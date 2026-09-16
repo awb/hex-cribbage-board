@@ -11,13 +11,23 @@ export const TRACK_LENGTH = 120
 export const PADDING = 1.6
 export const HOLES_PER_GROUP = 5
 
-/** Every spiral must yield this many vertices (24 segments × 5 holes = 120 holes). */
+/** 0-based indices of holes kept on the starter segment (3rd and 4th of 5). */
+export const STARTER_HOLE_INDICES = [2, 3] as const
+
+/** 0-based indices of holes kept on the center-lane finish segment (3rd of 5). */
+export const FINISH_HOLE_INDICES = [2] as const
+
+/** Scoring-track vertices (24 segments × 5 holes = 120 holes). */
 export const SPIRAL_VERTEX_COUNT = TRACK_LENGTH / HOLES_PER_GROUP + 1
+
+/** Includes the extra vertex for the starter segment at the beginning of each lane. */
+export const LANE_VERTEX_COUNT = SPIRAL_VERTEX_COUNT + 1
 
 export const HOLE_DIAMETER_MM = 3
 export const HOLE_CROSS_LENGTH_MM = 4
 
 export const LANE_COUNT = 3
+export const CENTER_LANE_INDEX = 1
 
 /** Radial drop per full turn: room for all lanes plus gap before the next turn. */
 export const TURN_DELTA_RADIUS = LANE_COUNT * LANE_SPACING + TRACK_SPACING

@@ -1,4 +1,4 @@
-import { SPIRAL_VERTEX_COUNT } from './constants'
+import { LANE_VERTEX_COUNT, SPIRAL_VERTEX_COUNT } from './constants'
 import { polarMidpointCartesian } from './polar'
 import type { PolarPoint } from './types'
 
@@ -6,6 +6,7 @@ export type SpiralFn = (
   start: PolarPoint,
   deltaRadius: number,
   deltaTheta: number,
+  extraEndVertices?: number,
 ) => PolarPoint[]
 
 function expandWithMidpoints(vertices: PolarPoint[]): PolarPoint[] {
@@ -20,37 +21,48 @@ function expandWithMidpoints(vertices: PolarPoint[]): PolarPoint[] {
   return expanded
 }
 
-/** 25 vertices of a 12-sided spiral (24 segments × 5 holes). */
+/** 26 vertices of a 12-sided spiral: starter segment plus 24 scoring segments. */
 export function dodecagonalSpiral(
   start: PolarPoint,
   deltaRadius: number,
   deltaTheta: number,
+  extraEndVertices = 0,
 ): PolarPoint[] {
-  return Array.from({ length: SPIRAL_VERTEX_COUNT }, (_, i) => ({
-    r: start.r - i * deltaRadius,
-    theta: start.theta + i * deltaTheta,
+  return Array.from({ length: LANE_VERTEX_COUNT + extraEndVertices }, (_, i) => ({
+    r: start.r - (i - 1) * deltaRadius,
+    theta: start.theta + (i - 1) * deltaTheta,
   }))
 }
 
 /**
- * 6-sided macro spiral expanded with edge midpoints; first and last points omitted
- * so the path starts and ends on half-edges. Requires 14 macro vertices so that
- * expand (27 points) minus endpoints yields SPIRAL_VERTEX_COUNT (25).
+ * 6-sided macro spiral expanded with edge midpoints. Omits the last point so the
+ * path ends on a half-edge; keeps the first macro vertex as the starter-segment
+ * start. Requires 14 macro vertices so that expand (27 points) minus the last
+ * yields LANE_VERTEX_COUNT (26).
  */
 export function hexagonalSpiralFromMidSides(
   start: PolarPoint,
   deltaRadius: number,
   deltaTheta: number,
+  extraEndVertices = 0,
 ): PolarPoint[] {
-  return hexagonalSpiralExpanded(start, deltaRadius, deltaTheta).slice(1, -1)
+  const expanded = hexagonalSpiralExpanded(start, deltaRadius, deltaTheta)
+  return extraEndVertices > 0 ? expanded : expanded.slice(0, -1)
 }
 
 export function hexagonalSpiralFromVertices(
   start: PolarPoint,
   deltaRadius: number,
   deltaTheta: number,
+  extraEndVertices = 0,
 ): PolarPoint[] {
-  return hexagonalSpiralExpanded(start, deltaRadius, deltaTheta).slice(0, -2)
+  const expanded = hexagonalSpiralExpanded(start, deltaRadius, deltaTheta)
+  const previousMacro: PolarPoint = {
+    r: start.r + 2 * deltaRadius,
+    theta: start.theta - 2 * deltaTheta,
+  }
+  const endOmit = 2 - extraEndVertices
+  return [polarMidpointCartesian(previousMacro, start), ...expanded.slice(0, -endOmit)]
 }
 
 function hexagonalSpiralExpanded(

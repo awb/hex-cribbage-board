@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { LANE_COUNT, LANE_SPACING, OUTLINE_RADIUS_MM, TRACK_LENGTH, TRACK_SPACING } from './constants'
+import { LANE_SPACING, OUTLINE_RADIUS_MM, TRACK_SPACING } from './constants'
 import { drawBoardCanvas } from './drawBoard'
 import { exportHexagonPdf } from './exportPdf'
 import { exportHexagonSvg } from './exportSvg'
@@ -95,7 +95,9 @@ export function HexagonApp() {
               lane spacing {formatMm(LANE_SPACING)} mm
             </li>
             <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-              {TRACK_LENGTH} holes × {LANE_COUNT} lanes
+              {board.track.lanes
+                .map((lane) => lane.segments.reduce((count, segment) => count + segment.holes.length, 0))
+                .join(' / ')} holes
             </li>
             <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
               {LAYOUT_LABELS[layout].toLowerCase()} layout
