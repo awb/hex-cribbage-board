@@ -1,4 +1,4 @@
-import { LANE_SPACING } from './constants'
+import { LANE_SPACING_MM } from './constants'
 import { LANE_SPIRAL_LINE_COLOR } from './geometry'
 import { polarToCanvas } from './polar'
 import type { CribbageBoard, Lane, PolarPoint } from './types'
@@ -81,7 +81,7 @@ function laneRibbonPoints(
   unitsPerMm: number,
 ): [number, number][] {
   const centerline = laneCenterline(lane).map((point) => polarToCanvas(cx, cy, point, unitsPerMm))
-  return buildLaneRibbon(centerline, (LANE_SPACING / 2) * unitsPerMm)
+  return buildLaneRibbon(centerline, (LANE_SPACING_MM / 2) * unitsPerMm)
 }
 
 function parseRgba(color: string): { r: number; g: number; b: number; a: number } {

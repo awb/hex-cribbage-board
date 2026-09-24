@@ -1,10 +1,11 @@
 import { jsPDF } from 'jspdf'
+import { drawArtworkPdf } from './drawArtwork'
 import { drawBoardOutlinePdf } from './drawBoard'
 import { drawBoardHolesPdf, type HoleStyle } from './drawHoles'
 import { drawLaneBackgroundsPdf, drawLaneSpiralLinesPdf } from './drawLanes'
 import { exportFileName } from './exportFileName'
 import { generateCribbageBoard } from './generateBoard'
-import { DIAGRAM_HEIGHT_CM, DIAGRAM_WIDTH_CM, BOARD_OUTLINE_LINE_WIDTH_MM } from './geometry'
+import { BOARD_OUTLINE_LINE_WIDTH_MM, diagramSizeCm } from './geometry'
 import { DEFAULT_LAYOUT, type LayoutVariant } from './layouts'
 import {
   DEFAULT_REPRESENTATION,
@@ -13,7 +14,6 @@ import {
 
 const CM_TO_MM = 10
 const MARGIN_MM = 10
-const BLACK: [number, number, number] = [0, 0, 0]
 
 function holeStyleForRepresentation(representation: BoardRepresentation): HoleStyle {
   return representation === 'drill-template' ? 'crosshair' : 'disk'
@@ -24,8 +24,9 @@ export function exportHexagonPdf(
   representation: BoardRepresentation = DEFAULT_REPRESENTATION,
 ) {
   const board = generateCribbageBoard(undefined, layout)
-  const pageW = DIAGRAM_WIDTH_CM * CM_TO_MM + 2 * MARGIN_MM
-  const pageH = DIAGRAM_HEIGHT_CM * CM_TO_MM + 2 * MARGIN_MM
+  const { widthCm, heightCm } = diagramSizeCm(board.outline.circumradiusMm)
+  const pageW = widthCm * CM_TO_MM + 2 * MARGIN_MM
+  const pageH = heightCm * CM_TO_MM + 2 * MARGIN_MM
   const cx = pageW / 2
   const cy = pageH / 2
 
@@ -43,7 +44,10 @@ export function exportHexagonPdf(
     drawLaneSpiralLinesPdf(pdf, cx, cy, board)
   }
 
-  pdf.setDrawColor(...BLACK)
+  if (representation === 'artwork') {
+    drawArtworkPdf(pdf, cx, cy, board)
+  }
+
   pdf.setLineWidth(BOARD_OUTLINE_LINE_WIDTH_MM)
   drawBoardOutlinePdf(pdf, cx, cy, board.outline)
 

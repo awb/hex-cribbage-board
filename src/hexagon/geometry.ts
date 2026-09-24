@@ -1,14 +1,20 @@
-import { OUTLINE_RADIUS_MM } from './constants'
-
-const OUTLINE_RADIUS_CM = OUTLINE_RADIUS_MM / 10
-
 /** Pointy-top hexagon: flat-to-flat distance equals sqrt(3) * circumradius. */
-export const OUTLINE_FLAT_TO_FLAT_CM = OUTLINE_RADIUS_CM * Math.sqrt(3)
+export function outlineFlatToFlatMm(circumradiusMm: number): number {
+  return circumradiusMm * Math.sqrt(3)
+}
 
-export const DIAGRAM_WIDTH_CM = OUTLINE_FLAT_TO_FLAT_CM
-export const DIAGRAM_HEIGHT_CM = 2 * OUTLINE_RADIUS_CM
+export function diagramSizeCm(circumradiusMm: number): { widthCm: number; heightCm: number } {
+  const radiusCm = circumradiusMm / 10
+  return {
+    widthCm: radiusCm * Math.sqrt(3),
+    heightCm: 2 * radiusCm,
+  }
+}
 
 export const LINE_COLOR = '#18181b'
+
+/** Light grey for the three lines that trisect the board outline. */
+export const SECTION_LINE_COLOR = '#e4e4e7'
 
 /** Rotate the board drawing 30° counter-clockwise on the page. */
 export const BOARD_DRAWING_ROTATION_RAD = -Math.PI / 6

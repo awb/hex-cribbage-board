@@ -1,24 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { LANE_SPACING, OUTLINE_RADIUS_MM, TRACK_SPACING } from './constants'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { LANE_SPACING_MM, TRACK_SPACING_MM } from './constants'
 import { drawBoardCanvas } from './drawBoard'
 import { exportHexagonPdf } from './exportPdf'
 import { exportHexagonSvg } from './exportSvg'
 import { generateCribbageBoard } from './generateBoard'
+import { diagramSizeCm, outlineFlatToFlatMm } from './geometry'
 import {
   DEFAULT_LAYOUT,
   LAYOUTS,
   LAYOUT_LABELS,
   type LayoutVariant,
 } from './layouts'
-import { DIAGRAM_HEIGHT_CM, DIAGRAM_WIDTH_CM, OUTLINE_FLAT_TO_FLAT_CM } from './geometry'
 import {
   BOARD_REPRESENTATIONS,
   DEFAULT_REPRESENTATION,
   REPRESENTATION_LABELS,
   type BoardRepresentation,
 } from './representations'
-
-
 
 function formatMm(value: number): string {
   return value.toFixed(1)
@@ -30,6 +28,7 @@ export function HexagonApp() {
   const [layout, setLayout] = useState<LayoutVariant>(DEFAULT_LAYOUT)
   const [representation, setRepresentation] = useState<BoardRepresentation>(DEFAULT_REPRESENTATION)
   const board = useMemo(() => generateCribbageBoard(undefined, layout), [layout])
+  const { widthCm, heightCm } = diagramSizeCm(board.outline.circumradiusMm)
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current
@@ -42,9 +41,9 @@ export function HexagonApp() {
     const availableW = Math.max(rect.width - padding, 200)
     const availableH = Math.max(rect.height - padding, 200)
 
-    const unitsPerCm = Math.min(availableW / DIAGRAM_WIDTH_CM, availableH / DIAGRAM_HEIGHT_CM) * 0.92
-    const drawW = DIAGRAM_WIDTH_CM * unitsPerCm
-    const drawH = DIAGRAM_HEIGHT_CM * unitsPerCm
+    const unitsPerCm = Math.min(availableW / widthCm, availableH / heightCm) * 0.92
+    const drawW = widthCm * unitsPerCm
+    const drawH = heightCm * unitsPerCm
 
     canvas.width = drawW * dpr
     canvas.height = drawH * dpr
@@ -56,7 +55,7 @@ export function HexagonApp() {
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     drawBoardCanvas(ctx, drawW / 2, drawH / 2, board, unitsPerCm, representation)
-  }, [board, representation])
+  }, [board, representation, widthCm, heightCm])
 
   useEffect(() => {
     redraw()
@@ -69,96 +68,107 @@ export function HexagonApp() {
   }, [redraw])
 
   const layoutConfig = LAYOUTS[layout]
+  const holesPerLane = board.track.lanes.map((lane) =>
+    lane.segments.reduce((count, segment) => count + segment.holes.length, 0),
+  )
+
+  const attributes: { label: string; value: string }[] = [
+    { label: 'Outline', value: `${formatMm(board.outline.circumradiusMm)} mm` },
+    { label: 'Flat-to-flat', value: `${(outlineFlatToFlatMm(board.outline.circumradiusMm) / 10).toFixed(1)} cm` },
+    {
+      label: 'Track',
+      value: `${formatMm(board.track.outermostTrackRadiusMm)}–${formatMm(board.track.innermostTrackRadiusMm)} mm`,
+    },
+    { label: 'Min hole spacing', value: `${formatMm(board.track.minimumHoleSpacingMm)} mm` },
+    { label: 'Track spacing', value: `${formatMm(TRACK_SPACING_MM)} mm` },
+    { label: 'Lane spacing', value: `${formatMm(LANE_SPACING_MM)} mm` },
+    { label: 'Holes', value: holesPerLane.join(' / ') },
+    { label: 'Layout', value: LAYOUT_LABELS[layout] },
+    { label: 'View', value: REPRESENTATION_LABELS[representation] },
+  ]
+
+  const attributeRows: { label: string; value: string }[][] = []
+  for (let i = 0; i < attributes.length; i += 3) {
+    attributeRows.push(attributes.slice(i, i + 3))
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-100 text-zinc-900">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 bg-white px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold">Hex Cribbage Board</h1>
-          <ul className="mt-1 flex flex-wrap gap-2">
-            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-              {formatMm(OUTLINE_RADIUS_MM)} mm outline
-            </li>
-            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-              {OUTLINE_FLAT_TO_FLAT_CM.toFixed(1)} cm flat-to-flat
-            </li>
-            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-              track {formatMm(board.track.outermostTrackRadiusMm)}–{formatMm(board.track.innermostTrackRadiusMm)} mm
-            </li>
-            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-              min hole spacing {formatMm(board.track.minimumHoleSpacingMm)} mm
-            </li>
-            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-              track spacing {formatMm(TRACK_SPACING)} mm
-            </li>
-            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-              lane spacing {formatMm(LANE_SPACING)} mm
-            </li>
-            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-              {board.track.lanes
-                .map((lane) => lane.segments.reduce((count, segment) => count + segment.holes.length, 0))
-                .join(' / ')} holes
-            </li>
-            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-              {LAYOUT_LABELS[layout].toLowerCase()} layout
-            </li>
-            <li className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-600">
-              {REPRESENTATION_LABELS[representation].toLowerCase()} view
-            </li>
-          </ul>
+      <header className="border-b border-zinc-200 bg-white px-6 py-4">
+        <h1 className="text-lg font-semibold">Hex Cribbage Board</h1>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div
+              role="group"
+              aria-label="Layout"
+              className="flex shrink-0 items-center gap-1 rounded-lg border border-zinc-300 p-1"
+            >
+              {(Object.keys(LAYOUTS) as LayoutVariant[]).map((variant) => (
+                <button
+                  key={variant}
+                  type="button"
+                  aria-pressed={layout === variant}
+                  onClick={() => setLayout(variant)}
+                  className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition ${
+                    layout === variant
+                      ? 'bg-zinc-900 text-white'
+                      : 'text-zinc-700 hover:bg-zinc-100'
+                  }`}
+                >
+                  {LAYOUT_LABELS[variant]}
+                </button>
+              ))}
+            </div>
+            <div
+              role="group"
+              aria-label="Representation"
+              className="flex shrink-0 items-center gap-1 rounded-lg border border-zinc-300 p-1"
+            >
+              {BOARD_REPRESENTATIONS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={representation === option}
+                  onClick={() => setRepresentation(option)}
+                  className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition ${
+                    representation === option
+                      ? 'bg-zinc-900 text-white'
+                      : 'text-zinc-700 hover:bg-zinc-100'
+                  }`}
+                >
+                  {REPRESENTATION_LABELS[option]}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => exportHexagonPdf(layout, representation)}
+              className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-700"
+            >
+              Export PDF
+            </button>
+            <button
+              type="button"
+              onClick={() => exportHexagonSvg(layout, representation)}
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
+            >
+              Export SVG
+            </button>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <fieldset className="flex items-center gap-1 rounded-lg border border-zinc-300 p-1">
-            <legend className="sr-only">Layout</legend>
-            {(Object.keys(LAYOUTS) as LayoutVariant[]).map((variant) => (
-              <button
-                key={variant}
-                type="button"
-                aria-pressed={layout === variant}
-                onClick={() => setLayout(variant)}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                  layout === variant
-                    ? 'bg-zinc-900 text-white'
-                    : 'text-zinc-700 hover:bg-zinc-100'
-                }`}
-              >
-                {LAYOUT_LABELS[variant]}
-              </button>
+        <table className="mt-3 text-xs text-zinc-600">
+          <caption className="sr-only">Board attributes</caption>
+          <tbody>
+            {attributeRows.map((row) => (
+              <tr key={row.map((cell) => cell.label).join('|')}>
+                {row.map((cell) => (
+                  <Fragment key={cell.label}>
+                    <th className="pr-2 text-left font-medium text-zinc-500">{cell.label}</th>
+                    <td className="pr-6 text-zinc-800">{cell.value}</td>
+                  </Fragment>
+                ))}
+              </tr>
             ))}
-          </fieldset>
-          <fieldset className="flex items-center gap-1 rounded-lg border border-zinc-300 p-1">
-            <legend className="sr-only">Representation</legend>
-            {BOARD_REPRESENTATIONS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={representation === option}
-                onClick={() => setRepresentation(option)}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                  representation === option
-                    ? 'bg-zinc-900 text-white'
-                    : 'text-zinc-700 hover:bg-zinc-100'
-                }`}
-              >
-                {REPRESENTATION_LABELS[option]}
-              </button>
-            ))}
-          </fieldset>
-          <button
-            type="button"
-            onClick={() => exportHexagonPdf(layout, representation)}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
-          >
-            Export PDF
-          </button>
-          <button
-            type="button"
-            onClick={() => exportHexagonSvg(layout, representation)}
-            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50"
-          >
-            Export SVG
-          </button>
-        </div>
+          </tbody>
+        </table>
       </header>
 
       <main

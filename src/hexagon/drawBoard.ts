@@ -1,4 +1,4 @@
-import { BOARD_OUTLINE_LINE_WIDTH_PX, LINE_COLOR } from './geometry'
+import { artworkSvgElements, drawArtworkCanvas } from './drawArtwork'
 import { drawBoardHolesCanvas, holeSvgElements, type HoleStyle } from './drawHoles'
 import {
   drawLaneBackgroundsCanvas,
@@ -6,6 +6,7 @@ import {
   laneBackgroundSvgElements,
   laneSpiralLineSvgElements,
 } from './drawLanes'
+import { BOARD_OUTLINE_LINE_WIDTH_PX, LINE_COLOR, SECTION_LINE_COLOR } from './geometry'
 import { polarToCanvas } from './polar'
 import type { BoardRepresentation } from './representations'
 import type { BoardOutline, CribbageBoard, PolarPoint } from './types'
@@ -82,7 +83,7 @@ function strokeOutlineCanvas(
 
   for (const line of outline.sectionLines) {
     const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, unitsPerMm)
-    strokeLineCanvas(ctx, start, end, lineWidth, strokeStyle)
+    strokeLineCanvas(ctx, start, end, Math.max(1, lineWidth * 0.6), SECTION_LINE_COLOR)
   }
 }
 
@@ -105,7 +106,7 @@ function outlineSvgElements(
   for (const line of outline.sectionLines) {
     const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, unitsPerMm)
     elements.push(
-      `<line x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`,
+      `<line x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}" stroke="${SECTION_LINE_COLOR}" stroke-width="${strokeWidth}"/>`,
     )
   }
 
@@ -137,6 +138,10 @@ export function drawBoardCanvas(
 
   if (representation === 'lined') {
     drawLaneSpiralLinesCanvas(ctx, cx, cy, board, unitsPerMm, spiralLineWidth)
+  }
+
+  if (representation === 'artwork') {
+    drawArtworkCanvas(ctx, cx, cy, board, unitsPerMm)
   }
 
   strokeOutlineCanvas(
@@ -180,6 +185,10 @@ export function boardSvgElements(
     elements.push(laneSpiralLineSvgElements(cx, cy, board, unitsPerMm, 0.06 * unitsPerCm))
   }
 
+  if (representation === 'artwork') {
+    elements.push(artworkSvgElements(cx, cy, board, unitsPerMm))
+  }
+
   elements.push(
     outlineSvgElements(
       cx,
@@ -203,6 +212,7 @@ export function drawBoardOutlinePdf(
 ) {
   const points = outlineCanvasPoints(cx, cy, outline, 1)
   if (points.length >= 2) {
+    pdf.setDrawColor(24, 24, 27)
     pdf.moveTo(points[0][0], points[0][1])
     for (let i = 1; i < points.length; i++) {
       pdf.lineTo(points[i][0], points[i][1])
@@ -211,6 +221,7 @@ export function drawBoardOutlinePdf(
     pdf.stroke()
   }
 
+  pdf.setDrawColor(212, 212, 216)
   for (const line of outline.sectionLines) {
     const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, 1)
     pdf.line(start[0], start[1], end[0], end[1])

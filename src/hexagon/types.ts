@@ -26,6 +26,7 @@ export type Track = {
 }
 
 export type BoardOutline = {
+  circumradiusMm: number
   vertices: PolarPoint[]
   innerBoardRadius: number
   sectionLines: { start: PolarPoint; end: PolarPoint }[]

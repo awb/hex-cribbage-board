@@ -4,7 +4,7 @@ import {
   LANE_VERTEX_COUNT,
   PADDING,
   STARTER_HOLE_INDICES,
-  TRACK_LENGTH,
+  TRACK_LENGTH_HOLES,
 } from './constants'
 import { generateSegment } from './generateSegment'
 import type { SpiralFn } from './spirals'
@@ -34,7 +34,7 @@ export function generateLane(
   const expectedCount = LANE_VERTEX_COUNT + extraEndVertices
   if (vertices.length !== expectedCount) {
     throw new Error(
-      `Spiral produced ${vertices.length} vertices, expected ${expectedCount} for a starter segment plus ${TRACK_LENGTH} holes`,
+      `Spiral produced ${vertices.length} vertices, expected ${expectedCount} for a starter segment plus ${TRACK_LENGTH_HOLES} holes`,
     )
   }
   const segments = [segmentWithHoles(vertices[0], vertices[1], STARTER_HOLE_INDICES)]

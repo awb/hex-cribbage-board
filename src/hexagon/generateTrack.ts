@@ -1,4 +1,4 @@
-import { CENTER_LANE_INDEX, LANE_BACKGROUND_COLORS, LANE_COUNT, LANE_SPACING } from './constants'
+import { CENTER_LANE_INDEX, LANE_BACKGROUND_COLORS, LANE_COUNT, LANE_SPACING_MM } from './constants'
 import { generateLane } from './generateLane'
 import type { LayoutConfig } from './layouts'
 import type { PolarPoint, Track } from './types'
@@ -36,7 +36,7 @@ export function generateTrack(
   const lanes = Array.from({ length: LANE_COUNT }, (_, laneIndex) => {
     const lane = generateLane(
       {
-        r: startingPoint.r - laneIndex * LANE_SPACING,
+        r: startingPoint.r - laneIndex * LANE_SPACING_MM,
         theta: startingPoint.theta + layout.pathStartOffsetInRadians,
       },
       vertexDeltaRadius,

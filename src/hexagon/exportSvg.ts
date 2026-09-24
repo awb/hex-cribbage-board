@@ -1,7 +1,7 @@
 import { boardSvgElements } from './drawBoard'
 import { exportFileName } from './exportFileName'
 import { generateCribbageBoard } from './generateBoard'
-import { DIAGRAM_HEIGHT_CM, DIAGRAM_WIDTH_CM } from './geometry'
+import { diagramSizeCm } from './geometry'
 import { DEFAULT_LAYOUT, type LayoutVariant } from './layouts'
 import {
   DEFAULT_REPRESENTATION,
@@ -13,9 +13,10 @@ export function exportHexagonSvg(
   representation: BoardRepresentation = DEFAULT_REPRESENTATION,
 ) {
   const board = generateCribbageBoard(undefined, layout)
+  const { widthCm, heightCm } = diagramSizeCm(board.outline.circumradiusMm)
   const unitsPerCm = 10
-  const width = DIAGRAM_WIDTH_CM * unitsPerCm
-  const height = DIAGRAM_HEIGHT_CM * unitsPerCm
+  const width = widthCm * unitsPerCm
+  const height = heightCm * unitsPerCm
   const cx = width / 2
   const cy = height / 2
 
