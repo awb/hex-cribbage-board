@@ -1,4 +1,5 @@
 import {
+  FINISH_LANE_INDEX,
   HOLES_PER_GROUP,
   LANE_LINE_COLOR,
   LANE_LINE_PADDING_MM,
@@ -14,8 +15,8 @@ import {
   WINNER_CIRCLE_STROKE_COLOR,
   WINNER_CIRCLE_STROKE_MM,
 } from './constants'
-import { polarToCanvas } from './polar'
-import type { CribbageBoard, PolarPoint } from './types'
+import { polarToCanvas, polarToCartesianMm } from './polar'
+import type { CribbageBoard, PolarPoint, Segment } from './types'
 
 type CanvasPoint = [number, number]
 
@@ -28,62 +29,109 @@ function hexRgb(hex: string): [number, number, number] {
   ]
 }
 
+function unwrapAngle(theta: number, around: number): number {
+  let unwrapped = theta
+  while (unwrapped - around > Math.PI) unwrapped -= 2 * Math.PI
+  while (around - unwrapped > Math.PI) unwrapped += 2 * Math.PI
+  return unwrapped
+}
+
 function unwrapThetas(thetas: number[]): number[] {
   if (thetas.length === 0) return []
   const unwrapped = [thetas[0]]
   for (let i = 1; i < thetas.length; i++) {
-    let theta = thetas[i]
-    const previous = unwrapped[i - 1]
-    while (theta - previous > Math.PI) theta -= 2 * Math.PI
-    while (previous - theta > Math.PI) theta += 2 * Math.PI
-    unwrapped.push(theta)
+    unwrapped.push(unwrapAngle(thetas[i], unwrapped[i - 1]))
   }
   return unwrapped
 }
 
-/** Last two holes of each segment, grouped by segment index across lanes. */
-function readyHoleGroups(board: CribbageBoard): PolarPoint[][] {
-  const segmentCount = Math.max(0, ...board.track.lanes.map((lane) => lane.segments.length))
-  const groups: PolarPoint[][] = []
-
-  for (let index = 0; index < segmentCount; index++) {
-    const holes = board.track.lanes.flatMap((lane) => lane.segments[index]?.holes.slice(-2) ?? [])
-    if (holes.length >= 3) groups.push(holes)
-  }
-
-  return groups
+function cartesianDelta(from: PolarPoint, to: PolarPoint): { x: number; y: number } {
+  const start = polarToCartesianMm(from)
+  const end = polarToCartesianMm(to)
+  return { x: end.x - start.x, y: end.y - start.y }
 }
 
-function readyTrapezoidCorners(holes: PolarPoint[]): PolarPoint[] | undefined {
+/** Outward polar normal of the outline side most parallel to the first segment. */
+function hexFlatNormalForSegment(
+  vertices: PolarPoint[],
+  segment: Segment,
+  holes: PolarPoint[],
+): number {
+  const segmentDelta = cartesianDelta(segment.start, segment.end)
+  const segmentLength = Math.hypot(segmentDelta.x, segmentDelta.y)
+  const probe = holes[0] ?? segment.start
+
+  let bestPhi = vertices[0]?.theta ?? 0
+  let bestAlign = -1
+  let bestDepth = -Infinity
+  for (let i = 0; i < vertices.length; i++) {
+    const next = vertices[(i + 1) % vertices.length]
+    const side = cartesianDelta(vertices[i], next)
+    const sideLength = Math.hypot(side.x, side.y)
+    if (segmentLength === 0 || sideLength === 0) continue
+    const align = Math.abs(
+      (segmentDelta.x * side.x + segmentDelta.y * side.y) / (segmentLength * sideLength),
+    )
+    const phi = (vertices[i].theta + unwrapAngle(next.theta, vertices[i].theta)) / 2
+    const depth = probe.r * Math.cos(probe.theta - phi)
+    if (align > bestAlign + 1e-6 || (Math.abs(align - bestAlign) <= 1e-6 && depth > bestDepth)) {
+      bestAlign = align
+      bestDepth = depth
+      bestPhi = phi
+    }
+  }
+  return bestPhi
+}
+
+/** The six READY holes on the first segment of each lane. */
+function readyHoles(board: CribbageBoard): PolarPoint[] {
+  return board.track.lanes.flatMap((lane) => lane.segments[0]?.holes ?? [])
+}
+
+/**
+ * Trapezoid around the READY holes: inner/outer sides parallel to the hex
+ * outline, the other two sides radial.
+ */
+function readyTrapezoidCorners(
+  holes: PolarPoint[],
+  vertices: PolarPoint[],
+  segment: Segment,
+): PolarPoint[] | undefined {
   if (holes.length < 3) return undefined
 
-  const radii = holes.map((hole) => hole.r)
   const thetas = unwrapThetas(holes.map((hole) => hole.theta))
-  const meanR = radii.reduce((sum, radius) => sum + radius, 0) / radii.length
+  const phi = hexFlatNormalForSegment(vertices, segment, holes)
+  const depths = holes.map((hole) => hole.r * Math.cos(hole.theta - phi))
+  const dMin = Math.min(...depths) - READY_BOX_PADDING_MM
+  const dMax = Math.max(...depths) + READY_BOX_PADDING_MM
+
+  const meanR = holes.reduce((sum, hole) => sum + hole.r, 0) / holes.length
   const angularPadding = READY_BOX_PADDING_MM / Math.max(meanR, 1)
-  const rMin = Math.min(...radii) - READY_BOX_PADDING_MM
-  const rMax = Math.max(...radii) + READY_BOX_PADDING_MM
   const tMin = Math.min(...thetas) - angularPadding
   const tMax = Math.max(...thetas) + angularPadding
-  if (rMin <= 0 || tMax <= tMin) return undefined
+  const cosMin = Math.cos(tMin - phi)
+  const cosMax = Math.cos(tMax - phi)
+  if (dMin <= 0 || cosMin <= 0 || cosMax <= 0 || tMax <= tMin) return undefined
 
   return [
-    { r: rMax, theta: tMin },
-    { r: rMax, theta: tMax },
-    { r: rMin, theta: tMax },
-    { r: rMin, theta: tMin },
+    { r: dMax / cosMin, theta: tMin },
+    { r: dMax / cosMax, theta: tMax },
+    { r: dMin / cosMax, theta: tMax },
+    { r: dMin / cosMin, theta: tMin },
   ]
 }
 
 function readyTrapezoids(board: CribbageBoard): PolarPoint[][] {
-  return readyHoleGroups(board)
-    .map(readyTrapezoidCorners)
-    .filter((corners): corners is PolarPoint[] => corners !== undefined)
+  const segment = board.track.lanes[0]?.segments[0]
+  if (!segment) return []
+  const corners = readyTrapezoidCorners(readyHoles(board), board.outline.vertices, segment)
+  return corners ? [corners] : []
 }
 
 function winnerHole(board: CribbageBoard): PolarPoint | undefined {
-  const holes = board.track.lanes[0]?.segments.flatMap((segment) => segment.holes) ?? []
-  return holes[1]
+  const lane = board.track.lanes[FINISH_LANE_INDEX]
+  const segment = lane?.segments[lane.segments.length - 1]
+  return segment?.holes[0]
 }
 
 function scoringGroups(board: CribbageBoard): PolarPoint[][] {

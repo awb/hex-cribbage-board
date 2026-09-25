@@ -1,6 +1,6 @@
 # Hexagonal Cribbage Board
 
-This app draws a cribbage board layout as a template for fabrication. The layout is hexagonal: 3 parallel lanes of holes, grouped in blocks of 5, spiral in from the outer edge. Each lane has a 2-hole READY starter segment, 120 scoring holes (24 groups of 5), and the center lane has a 1-hole WINNER finish. The board can be viewed in a browser (JavaScript canvas), exported as PDF for printing, and exported as SVG for transfer to CAD software.
+This app draws a cribbage board layout as a template for fabrication. The layout is hexagonal: 3 parallel lanes of holes, grouped in blocks of 5, spiral in from the outer edge. Each lane has a 2-hole READY starter segment, 120 scoring holes (24 groups of 5), and the first lane has a 1-hole WINNER finish. The board can be viewed in a browser (JavaScript canvas), exported as PDF for printing, and exported as SVG for transfer to CAD software.
 
 ## Running the app
 
@@ -51,7 +51,7 @@ Three layouts share the same board constants and produce the same hole counts. T
 | Scoring segments per lane       | 24                        | 24                                                       | 24                                                       |
 | Scoring holes per lane          | 120                       | 120                                                      | 120                                                      |
 | Starter holes per lane          | 2                         | 2                                                        | 2                                                        |
-| Finish holes                    | center lane only (1)      | center lane only (1)                                     | center lane only (1)                                     |
+| Finish holes                    | first lane only (1)       | first lane only (1)                                      | first lane only (1)                                      |
 | Complete turns                  | 2                         | 2                                                        | 2                                                        |
 
 A UI toggle switches between layouts. Changing the toggle regenerates the board and applies to PDF/SVG export.
@@ -72,7 +72,7 @@ const DEFAULT_LAYOUT: LayoutVariant = 'hexagonal2'
 
 - **CribbageBoard** — a cribbage board layout. Has a track that starts at PolarPoint `[INITIAL_RADIUS_MM, 0]` and spirals in toward the center. Each turn of the track around the center is separated from the previous by `TRACK_SPACING_MM`. The outer hex outline is sized from the outermost hole so the track lies entirely inside.
 - **Track** — a set of parallel lanes with separation `LANE_SPACING_MM` and scoring length `TRACK_LENGTH_HOLES`. The first lane starts at the track initial location; the initial radial location of the 2nd lane is less by `LANE_SPACING_MM`, and the 3rd lane similarly.
-- **Lane** — an ordered set of segments, each starting from the endpoint of the previous. Each lane begins with a starter segment (READY holes at the 3rd and 4th positions). The center lane ends with a finish segment (WINNER hole at the 3rd position).
+- **Lane** — an ordered set of segments, each starting from the endpoint of the previous. Each lane begins with a starter segment (READY holes at the 4th and 5th positions). The first lane ends with a finish segment (WINNER hole at the 1st position).
 - **Segment** — has a defined start point and end point. Scoring segments contain 5 holes in a straight line, with inter-group padding proportionate to hole spacing by `PADDING`.
 - **Hole** — a point at polar coordinate `(r, theta)`. Drill-template drawing is a 3 mm circle plus a 4 mm cross; other views draw a 3 mm disk.
 
@@ -87,10 +87,10 @@ INITIAL_RADIUS_MM = 150 - TRACK_SPACING_MM
 TRACK_LENGTH_HOLES = 120            // scoring holes per lane
 PADDING = 1.6                       // multiplier for calculated hole spacing
 HOLES_PER_GROUP = 5
-STARTER_HOLE_INDICES = [2, 3]       // 3rd and 4th of 5
-FINISH_HOLE_INDICES = [2]           // 3rd of 5, center lane only
+STARTER_HOLE_INDICES = [3, 4]       // 4th and 5th of 5
+FINISH_HOLE_INDICES = [0]           // 1st of 5, first lane only
 LANE_COUNT = 3
-CENTER_LANE_INDEX = 1
+FINISH_LANE_INDEX = 0
 HOLE_DIAMETER_MM = 3
 HOLE_CROSS_LENGTH_MM = 4
 TURN_DELTA_RADIUS_MM = LANE_COUNT * LANE_SPACING_MM + TRACK_SPACING_MM
@@ -173,7 +173,7 @@ function generateCribbageBoard(
 
 #### `generateTrack`
 
-Generate 3 interleaved lanes offset by `LANE_SPACING_MM`. Applies `pathStartOffsetInRadians` to each lane start angle. Successive turns leave `TRACK_SPACING_MM` between them. The center lane receives the finish segment.
+Generate 3 interleaved lanes offset by `LANE_SPACING_MM`. Applies `pathStartOffsetInRadians` to each lane start angle. Successive turns leave `TRACK_SPACING_MM` between them. The first lane receives the finish segment.
 
 #### `generateLane`
 
@@ -195,8 +195,8 @@ Representations (UI toggle; applies to canvas, PDF, and SVG):
 - **Color** — translucent red/green/blue lane ribbons, outline, disk holes.
 - **Lined** — grey spiral through hole centers, outline, disk holes.
 - **Artwork** — four items, each drawn by its own function:
-  - **READY trapezoids** — one trapezoid per segment around the last two holes of each lane at that segment. The two sides are rays from the board center; padding is `READY_BOX_PADDING_MM`.
-  - **WINNER circle** — circle of radius `LANE_SPACING_MM` and 2 mm stroke, centered on the second hole of the first lane.
+  - **READY trapezoid** — one trapezoid around the six READY holes on the first segment. The inner and outer sides are parallel to the board outline; the other two sides are rays from the board center. Padding is `READY_BOX_PADDING_MM`.
+  - **WINNER circle** — circle of radius `LANE_SPACING_MM` and 2 mm stroke, centered on the single finish hole of the first lane.
   - **LANE_LINE** — thin grey line through the center of each group of 5 holes, extended by `LANE_LINE_PADDING_MM`.
   - **LOGO** — hexagon with 40 mm sides in the board center, trisected at `θ = [0, 2π/3, 4π/3]`.
 

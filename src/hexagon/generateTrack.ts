@@ -1,4 +1,4 @@
-import { CENTER_LANE_INDEX, LANE_BACKGROUND_COLORS, LANE_COUNT, LANE_SPACING_MM } from './constants'
+import { FINISH_LANE_INDEX, LANE_BACKGROUND_COLORS, LANE_COUNT, LANE_SPACING_MM } from './constants'
 import { generateLane } from './generateLane'
 import type { LayoutConfig } from './layouts'
 import type { PolarPoint, Track } from './types'
@@ -42,7 +42,7 @@ export function generateTrack(
       vertexDeltaRadius,
       deltaTheta,
       layout.spiral,
-      laneIndex === CENTER_LANE_INDEX,
+      laneIndex === FINISH_LANE_INDEX,
     )
     minimumHoleSpacingMm = Math.min(minimumHoleSpacingMm, lane.minimumHoleSpacingMm)
 

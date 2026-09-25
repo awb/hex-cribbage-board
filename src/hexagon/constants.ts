@@ -8,11 +8,11 @@ export const TRACK_LENGTH_HOLES = 120
 export const PADDING = 1.6
 export const HOLES_PER_GROUP = 5
 
-/** 0-based indices of holes kept on the starter segment (3rd and 4th of 5). */
-export const STARTER_HOLE_INDICES = [2, 3] as const
+/** 0-based indices of holes kept on the starter segment (4th and 5th of 5). */
+export const STARTER_HOLE_INDICES = [3, 4] as const
 
-/** 0-based indices of holes kept on the center-lane finish segment (3rd of 5). */
-export const FINISH_HOLE_INDICES = [2] as const
+/** 0-based indices of holes kept on the finish segment (1st of 5). */
+export const FINISH_HOLE_INDICES = [0] as const
 
 /** Scoring-track vertices (24 segments × 5 holes = 120 holes). */
 export const SPIRAL_VERTEX_COUNT = TRACK_LENGTH_HOLES / HOLES_PER_GROUP + 1
@@ -24,7 +24,8 @@ export const HOLE_DIAMETER_MM = 3
 export const HOLE_CROSS_LENGTH_MM = 4
 
 export const LANE_COUNT = 3
-export const CENTER_LANE_INDEX = 1
+/** 0-based first lane; receives the single-hole finish segment. */
+export const FINISH_LANE_INDEX = 0
 
 /** Radial drop per full turn: room for all lanes plus gap before the next turn. */
 export const TURN_DELTA_RADIUS_MM = LANE_COUNT * LANE_SPACING_MM + TRACK_SPACING_MM
@@ -39,12 +40,12 @@ export const LANE_BACKGROUND_COLORS = [
   'rgba(59, 130, 246, 0.5)',
 ] as const
 
-/** Artwork: trapezoid around the last two READY holes of each segment. */
+/** Artwork: trapezoid around the six READY holes on the first segment. */
 export const READY_BOX_STROKE_COLOR = '#2563eb'
 export const READY_BOX_FILL_COLOR = 'rgba(37, 99, 235, 0.12)'
 export const READY_BOX_PADDING_MM = 3
 
-/** Artwork: WINNER circle on the second hole of the first lane. */
+/** Artwork: WINNER circle on the first lane's finish hole. */
 export const WINNER_CIRCLE_STROKE_COLOR = '#ca8a04'
 export const WINNER_CIRCLE_STROKE_MM = 2
 
