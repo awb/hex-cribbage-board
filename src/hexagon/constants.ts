@@ -39,13 +39,12 @@ export const LANE_BACKGROUND_COLORS = [
   'rgba(59, 130, 246, 0.5)',
 ] as const
 
-/** Artwork: rounded box around the six READY holes. */
+/** Artwork: trapezoid around the last two READY holes of each segment. */
 export const READY_BOX_STROKE_COLOR = '#2563eb'
 export const READY_BOX_FILL_COLOR = 'rgba(37, 99, 235, 0.12)'
-export const READY_BOX_CORNER_RADIUS_MM = 2
 export const READY_BOX_PADDING_MM = 3
 
-/** Artwork: WINNER circle on the center-lane finish hole. */
+/** Artwork: WINNER circle on the second hole of the first lane. */
 export const WINNER_CIRCLE_STROKE_COLOR = '#ca8a04'
 export const WINNER_CIRCLE_STROKE_MM = 2
 

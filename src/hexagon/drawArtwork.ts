@@ -1,5 +1,4 @@
 import {
-  CENTER_LANE_INDEX,
   HOLES_PER_GROUP,
   LANE_LINE_COLOR,
   LANE_LINE_PADDING_MM,
@@ -9,7 +8,6 @@ import {
   LOGO_STROKE_COLOR,
   LOGO_STROKE_MM,
   LOGO_TRISECT_THETAS,
-  READY_BOX_CORNER_RADIUS_MM,
   READY_BOX_FILL_COLOR,
   READY_BOX_PADDING_MM,
   READY_BOX_STROKE_COLOR,
@@ -21,14 +19,6 @@ import type { CribbageBoard, PolarPoint } from './types'
 
 type CanvasPoint = [number, number]
 
-type OrientedBox = {
-  centerX: number
-  centerY: number
-  width: number
-  height: number
-  angle: number
-}
-
 function hexRgb(hex: string): [number, number, number] {
   const value = hex.replace('#', '')
   return [
@@ -38,70 +28,68 @@ function hexRgb(hex: string): [number, number, number] {
   ]
 }
 
-function readyHoles(board: CribbageBoard): PolarPoint[] {
-  return board.track.lanes.flatMap((lane) => lane.segments[0]?.holes ?? [])
+function unwrapThetas(thetas: number[]): number[] {
+  if (thetas.length === 0) return []
+  const unwrapped = [thetas[0]]
+  for (let i = 1; i < thetas.length; i++) {
+    let theta = thetas[i]
+    const previous = unwrapped[i - 1]
+    while (theta - previous > Math.PI) theta -= 2 * Math.PI
+    while (previous - theta > Math.PI) theta += 2 * Math.PI
+    unwrapped.push(theta)
+  }
+  return unwrapped
+}
+
+/** Last two holes of each segment, grouped by segment index across lanes. */
+function readyHoleGroups(board: CribbageBoard): PolarPoint[][] {
+  const segmentCount = Math.max(0, ...board.track.lanes.map((lane) => lane.segments.length))
+  const groups: PolarPoint[][] = []
+
+  for (let index = 0; index < segmentCount; index++) {
+    const holes = board.track.lanes.flatMap((lane) => lane.segments[index]?.holes.slice(-2) ?? [])
+    if (holes.length >= 3) groups.push(holes)
+  }
+
+  return groups
+}
+
+function readyTrapezoidCorners(holes: PolarPoint[]): PolarPoint[] | undefined {
+  if (holes.length < 3) return undefined
+
+  const radii = holes.map((hole) => hole.r)
+  const thetas = unwrapThetas(holes.map((hole) => hole.theta))
+  const meanR = radii.reduce((sum, radius) => sum + radius, 0) / radii.length
+  const angularPadding = READY_BOX_PADDING_MM / Math.max(meanR, 1)
+  const rMin = Math.min(...radii) - READY_BOX_PADDING_MM
+  const rMax = Math.max(...radii) + READY_BOX_PADDING_MM
+  const tMin = Math.min(...thetas) - angularPadding
+  const tMax = Math.max(...thetas) + angularPadding
+  if (rMin <= 0 || tMax <= tMin) return undefined
+
+  return [
+    { r: rMax, theta: tMin },
+    { r: rMax, theta: tMax },
+    { r: rMin, theta: tMax },
+    { r: rMin, theta: tMin },
+  ]
+}
+
+function readyTrapezoids(board: CribbageBoard): PolarPoint[][] {
+  return readyHoleGroups(board)
+    .map(readyTrapezoidCorners)
+    .filter((corners): corners is PolarPoint[] => corners !== undefined)
 }
 
 function winnerHole(board: CribbageBoard): PolarPoint | undefined {
-  const lane = board.track.lanes[CENTER_LANE_INDEX]
-  const segment = lane?.segments[lane.segments.length - 1]
-  return segment?.holes[segment.holes.length - 1]
+  const holes = board.track.lanes[0]?.segments.flatMap((segment) => segment.holes) ?? []
+  return holes[1]
 }
 
 function scoringGroups(board: CribbageBoard): PolarPoint[][] {
   return board.track.lanes.flatMap((lane) =>
     lane.segments.filter((segment) => segment.holes.length === HOLES_PER_GROUP).map((segment) => segment.holes),
   )
-}
-
-function readyBox(cx: number, cy: number, board: CribbageBoard, unitsPerMm: number): OrientedBox | undefined {
-  const holes = readyHoles(board)
-  if (holes.length === 0) return undefined
-
-  const points = holes.map((hole) => polarToCanvas(cx, cy, hole, unitsPerMm))
-  const firstSegment = board.track.lanes[0]?.segments[0]
-  const axisStart = firstSegment
-    ? polarToCanvas(cx, cy, firstSegment.start, unitsPerMm)
-    : points[0]
-  const axisEnd = firstSegment
-    ? polarToCanvas(cx, cy, firstSegment.end, unitsPerMm)
-    : points[points.length - 1]
-  const axisDx = axisEnd[0] - axisStart[0]
-  const axisDy = axisEnd[1] - axisStart[1]
-  const axisLength = Math.hypot(axisDx, axisDy)
-  const ux = axisLength === 0 ? 1 : axisDx / axisLength
-  const uy = axisLength === 0 ? 0 : axisDy / axisLength
-  const vx = -uy
-  const vy = ux
-  const padding = READY_BOX_PADDING_MM * unitsPerMm
-
-  let minU = Infinity
-  let maxU = -Infinity
-  let minV = Infinity
-  let maxV = -Infinity
-  for (const [x, y] of points) {
-    const u = x * ux + y * uy
-    const v = x * vx + y * vy
-    minU = Math.min(minU, u)
-    maxU = Math.max(maxU, u)
-    minV = Math.min(minV, v)
-    maxV = Math.max(maxV, v)
-  }
-
-  minU -= padding
-  maxU += padding
-  minV -= padding
-  maxV += padding
-
-  const midU = (minU + maxU) / 2
-  const midV = (minV + maxV) / 2
-  return {
-    centerX: midU * ux + midV * vx,
-    centerY: midU * uy + midV * vy,
-    width: maxU - minU,
-    height: maxV - minV,
-    angle: Math.atan2(uy, ux),
-  }
 }
 
 function extendSegment(start: CanvasPoint, end: CanvasPoint, padding: number): [CanvasPoint, CanvasPoint] {
@@ -115,24 +103,6 @@ function extendSegment(start: CanvasPoint, end: CanvasPoint, padding: number): [
     [start[0] - ux * padding, start[1] - uy * padding],
     [end[0] + ux * padding, end[1] + uy * padding],
   ]
-}
-
-function mapLocal(box: OrientedBox, lx: number, ly: number): CanvasPoint {
-  const cos = Math.cos(box.angle)
-  const sin = Math.sin(box.angle)
-  return [box.centerX + lx * cos - ly * sin, box.centerY + lx * sin + ly * cos]
-}
-
-function quadraticToCubic(
-  start: CanvasPoint,
-  control: CanvasPoint,
-  end: CanvasPoint,
-): { c1: CanvasPoint; c2: CanvasPoint; end: CanvasPoint } {
-  return {
-    c1: [start[0] + ((control[0] - start[0]) * 2) / 3, start[1] + ((control[1] - start[1]) * 2) / 3],
-    c2: [end[0] + ((control[0] - end[0]) * 2) / 3, end[1] + ((control[1] - end[1]) * 2) / 3],
-    end,
-  }
 }
 
 function logoVertices(): PolarPoint[] {
@@ -149,6 +119,18 @@ function logoTrisectPairs(): [PolarPoint, PolarPoint][] {
   ])
 }
 
+function strokeReadyTrapezoids(
+  drawPolygon: (points: CanvasPoint[]) => void,
+  cx: number,
+  cy: number,
+  board: CribbageBoard,
+  unitsPerMm: number,
+) {
+  for (const corners of readyTrapezoids(board)) {
+    drawPolygon(corners.map((corner) => polarToCanvas(cx, cy, corner, unitsPerMm)))
+  }
+}
+
 export function drawReadyBoxCanvas(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -156,26 +138,26 @@ export function drawReadyBoxCanvas(
   board: CribbageBoard,
   unitsPerMm: number,
 ) {
-  const box = readyBox(cx, cy, board, unitsPerMm)
-  if (!box) return
-
-  const radius = Math.min(
-    READY_BOX_CORNER_RADIUS_MM * unitsPerMm,
-    box.width / 2,
-    box.height / 2,
-  )
-
-  ctx.save()
-  ctx.translate(box.centerX, box.centerY)
-  ctx.rotate(box.angle)
-  ctx.beginPath()
-  ctx.roundRect(-box.width / 2, -box.height / 2, box.width, box.height, radius)
   ctx.fillStyle = READY_BOX_FILL_COLOR
   ctx.strokeStyle = READY_BOX_STROKE_COLOR
   ctx.lineWidth = 0.7 * unitsPerMm
-  ctx.fill()
-  ctx.stroke()
-  ctx.restore()
+  strokeReadyTrapezoids(
+    (points) => {
+      if (points.length < 3) return
+      ctx.beginPath()
+      ctx.moveTo(points[0][0], points[0][1])
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i][0], points[i][1])
+      }
+      ctx.closePath()
+      ctx.fill()
+      ctx.stroke()
+    },
+    cx,
+    cy,
+    board,
+    unitsPerMm,
+  )
 }
 
 export function drawWinnerCircleCanvas(
@@ -265,15 +247,15 @@ export function readyBoxSvgElement(
   board: CribbageBoard,
   unitsPerMm: number,
 ): string {
-  const box = readyBox(cx, cy, board, unitsPerMm)
-  if (!box) return ''
-  const radius = Math.min(
-    READY_BOX_CORNER_RADIUS_MM * unitsPerMm,
-    box.width / 2,
-    box.height / 2,
-  )
-  const degrees = (box.angle * 180) / Math.PI
-  return `<rect x="${-box.width / 2}" y="${-box.height / 2}" width="${box.width}" height="${box.height}" rx="${radius}" ry="${radius}" fill="${READY_BOX_FILL_COLOR}" stroke="${READY_BOX_STROKE_COLOR}" stroke-width="${0.7 * unitsPerMm}" transform="translate(${box.centerX} ${box.centerY}) rotate(${degrees})"/>`
+  return readyTrapezoids(board)
+    .map((corners) => {
+      const points = corners
+        .map((corner) => polarToCanvas(cx, cy, corner, unitsPerMm))
+        .map(([x, y]) => `${x},${y}`)
+        .join(' ')
+      return `<polygon points="${points}" fill="${READY_BOX_FILL_COLOR}" stroke="${READY_BOX_STROKE_COLOR}" stroke-width="${0.7 * unitsPerMm}"/>`
+    })
+    .join('\n')
 }
 
 export function winnerCircleSvgElement(
@@ -336,60 +318,25 @@ export function artworkSvgElements(
     .join('\n')
 }
 
-function curveCorner(
-  pdf: import('jspdf').jsPDF,
-  start: CanvasPoint,
-  corner: CanvasPoint,
-  end: CanvasPoint,
-) {
-  const cubic = quadraticToCubic(start, corner, end)
-  pdf.curveTo(cubic.c1[0], cubic.c1[1], cubic.c2[0], cubic.c2[1], cubic.end[0], cubic.end[1])
-}
-
-function drawRoundedObbPdf(
-  pdf: import('jspdf').jsPDF,
-  box: OrientedBox,
-  radiusMm: number,
-  fill: [number, number, number],
-  stroke: [number, number, number],
-) {
-  const hw = box.width / 2
-  const hh = box.height / 2
-  const r = Math.min(radiusMm, hw, hh)
-  const world = (lx: number, ly: number) => mapLocal(box, lx, ly)
-
-  const start = world(hw - r, -hh)
-  pdf.moveTo(start[0], start[1])
-  pdf.lineTo(...world(-hw + r, -hh))
-  curveCorner(pdf, world(-hw + r, -hh), world(-hw, -hh), world(-hw, -hh + r))
-  pdf.lineTo(...world(-hw, hh - r))
-  curveCorner(pdf, world(-hw, hh - r), world(-hw, hh), world(-hw + r, hh))
-  pdf.lineTo(...world(hw - r, hh))
-  curveCorner(pdf, world(hw - r, hh), world(hw, hh), world(hw, hh - r))
-  pdf.lineTo(...world(hw, -hh + r))
-  curveCorner(pdf, world(hw, -hh + r), world(hw, -hh), world(hw - r, -hh))
-
-  pdf.setFillColor(...fill)
-  pdf.setDrawColor(...stroke)
-  pdf.fillStroke()
-}
-
 export function drawReadyBoxPdf(
   pdf: import('jspdf').jsPDF,
   cx: number,
   cy: number,
   board: CribbageBoard,
 ) {
-  const box = readyBox(cx, cy, board, 1)
-  if (!box) return
+  pdf.setFillColor(219, 234, 254)
+  pdf.setDrawColor(...hexRgb(READY_BOX_STROKE_COLOR))
   pdf.setLineWidth(0.35)
-  drawRoundedObbPdf(
-    pdf,
-    box,
-    READY_BOX_CORNER_RADIUS_MM,
-    [219, 234, 254],
-    hexRgb(READY_BOX_STROKE_COLOR),
-  )
+  for (const corners of readyTrapezoids(board)) {
+    const points = corners.map((corner) => polarToCanvas(cx, cy, corner, 1))
+    if (points.length < 3) continue
+    pdf.moveTo(points[0][0], points[0][1])
+    for (let i = 1; i < points.length; i++) {
+      pdf.lineTo(points[i][0], points[i][1])
+    }
+    pdf.lineTo(points[0][0], points[0][1])
+    pdf.fillStroke()
+  }
 }
 
 export function drawWinnerCirclePdf(

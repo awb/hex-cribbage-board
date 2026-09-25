@@ -97,10 +97,9 @@ TURN_DELTA_RADIUS_MM = LANE_COUNT * LANE_SPACING_MM + TRACK_SPACING_MM
 HEX_INRADIUS_PER_SIDE = √3 / 2
 ```
 
-Artwork constants (colors, corner radius, padding from hole positions):
+Artwork constants (colors and padding from hole positions):
 
 ```typescript
-READY_BOX_CORNER_RADIUS_MM = 2
 READY_BOX_PADDING_MM = 3
 WINNER_CIRCLE_STROKE_MM = 2         // radius is LANE_SPACING_MM
 LANE_LINE_STROKE_MM = 0.35
@@ -115,7 +114,7 @@ Derived values:
 - `deltaTheta = 2π / segmentsPerRound` → π/6
 - `vertexDeltaRadius = TURN_DELTA_RADIUS_MM / segmentsPerRound`
 - `segmentCount / segmentsPerRound = 2` complete turns
-- Outline circumradius = (first hole of first lane).r / `HEX_INRADIUS_PER_SIDE`
+- Outline circumradius = (first hole of first lane).r / `HEX_INRADIUS_PER_SIDE` + `TRACK_SPACING_MM`
 
 The outline is a regular hexagon. Its minimum radius (center to a flat) is `(√3/2) × side`. Side equals circumradius, so the circumradius is chosen so that inscribed-circle radius equals the outermost hole radius (first hole on the first lane). That keeps the track inside the hex for every layout.
 
@@ -196,8 +195,8 @@ Representations (UI toggle; applies to canvas, PDF, and SVG):
 - **Color** — translucent red/green/blue lane ribbons, outline, disk holes.
 - **Lined** — grey spiral through hole centers, outline, disk holes.
 - **Artwork** — four items, each drawn by its own function:
-  - **READY box** — rounded rectangle around the six starter holes (first segment of each lane). Padding and corner radius are constants.
-  - **WINNER circle** — circle of radius `LANE_SPACING_MM` and 2 mm stroke, centered on the final hole of the middle lane.
+  - **READY trapezoids** — one trapezoid per segment around the last two holes of each lane at that segment. The two sides are rays from the board center; padding is `READY_BOX_PADDING_MM`.
+  - **WINNER circle** — circle of radius `LANE_SPACING_MM` and 2 mm stroke, centered on the second hole of the first lane.
   - **LANE_LINE** — thin grey line through the center of each group of 5 holes, extended by `LANE_LINE_PADDING_MM`.
   - **LOGO** — hexagon with 40 mm sides in the board center, trisected at `θ = [0, 2π/3, 4π/3]`.
 

@@ -34,10 +34,11 @@ export function outermostHole(track: Pick<Track, 'lanes'>): PolarPoint {
 
 /**
  * Circumradius of a regular hexagon whose inscribed circle reaches the outermost
- * hole. Inradius = (√3/2) × side, and side equals circumradius.
+ * hole, plus TRACK_SPACING_MM of padding to the board edge. Inradius = (√3/2) ×
+ * side, and side equals circumradius.
  */
 export function outlineCircumradiusMm(track: Pick<Track, 'lanes'>): number {
-  return outermostHole(track).r / HEX_INRADIUS_PER_SIDE
+  return outermostHole(track).r / HEX_INRADIUS_PER_SIDE + TRACK_SPACING_MM
 }
 
 function sectionLines(
