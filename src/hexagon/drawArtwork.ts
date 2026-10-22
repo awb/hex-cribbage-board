@@ -9,9 +9,9 @@ import {
   LOGO_STROKE_COLOR,
   LOGO_STROKE_MM,
   LOGO_TRISECT_THETAS,
-  READY_BOX_FILL_COLOR,
   READY_BOX_PADDING_MM,
   READY_BOX_STROKE_COLOR,
+  READY_BOX_STROKE_MM,
   WINNER_CIRCLE_STROKE_COLOR,
   WINNER_CIRCLE_STROKE_MM,
 } from './constants'
@@ -83,13 +83,8 @@ function hexFlatNormalForSegment(
   return bestPhi
 }
 
-/** The six READY holes on the first segment of each lane. */
-function readyHoles(board: CribbageBoard): PolarPoint[] {
-  return board.track.lanes.flatMap((lane) => lane.segments[0]?.holes ?? [])
-}
-
 /**
- * Trapezoid around the READY holes: inner/outer sides parallel to the hex
+ * Trapezoid around a READY hole pair: inner/outer sides parallel to the hex
  * outline, the other two sides radial.
  */
 function readyTrapezoidCorners(
@@ -97,7 +92,7 @@ function readyTrapezoidCorners(
   vertices: PolarPoint[],
   segment: Segment,
 ): PolarPoint[] | undefined {
-  if (holes.length < 3) return undefined
+  if (holes.length < 2) return undefined
 
   const thetas = unwrapThetas(holes.map((hole) => hole.theta))
   const phi = hexFlatNormalForSegment(vertices, segment, holes)
@@ -122,10 +117,12 @@ function readyTrapezoidCorners(
 }
 
 function readyTrapezoids(board: CribbageBoard): PolarPoint[][] {
-  const segment = board.track.lanes[0]?.segments[0]
-  if (!segment) return []
-  const corners = readyTrapezoidCorners(readyHoles(board), board.outline.vertices, segment)
-  return corners ? [corners] : []
+  return board.track.lanes.flatMap((lane) => {
+    const segment = lane.segments[0]
+    if (!segment) return []
+    const corners = readyTrapezoidCorners(segment.holes, board.outline.vertices, segment)
+    return corners ? [corners] : []
+  })
 }
 
 function winnerHole(board: CribbageBoard): PolarPoint | undefined {
@@ -186,9 +183,8 @@ export function drawReadyBoxCanvas(
   board: CribbageBoard,
   unitsPerMm: number,
 ) {
-  ctx.fillStyle = READY_BOX_FILL_COLOR
   ctx.strokeStyle = READY_BOX_STROKE_COLOR
-  ctx.lineWidth = 0.7 * unitsPerMm
+  ctx.lineWidth = READY_BOX_STROKE_MM * unitsPerMm
   strokeReadyTrapezoids(
     (points) => {
       if (points.length < 3) return
@@ -198,7 +194,6 @@ export function drawReadyBoxCanvas(
         ctx.lineTo(points[i][0], points[i][1])
       }
       ctx.closePath()
-      ctx.fill()
       ctx.stroke()
     },
     cx,
@@ -273,7 +268,7 @@ export function drawLogoCanvas(
     ctx.moveTo(a[0], a[1])
     ctx.lineTo(b[0], b[1])
   }
-  ctx.strokeStyle = '#ff8080'
+  ctx.strokeStyle = LOGO_STROKE_COLOR
   ctx.stroke()
 }
 
@@ -302,7 +297,7 @@ export function readyBoxSvgElement(
         .map((corner) => polarToCanvas(cx, cy, corner, unitsPerMm))
         .map(([x, y]) => `${x},${y}`)
         .join(' ')
-      return `<polygon points="${points}" fill="${READY_BOX_FILL_COLOR}" stroke="${READY_BOX_STROKE_COLOR}" stroke-width="${0.7 * unitsPerMm}"/>`
+      return `<polygon points="${points}" fill="none" stroke="${READY_BOX_STROKE_COLOR}" stroke-width="${READY_BOX_STROKE_MM * unitsPerMm}"/>`
     })
     .join('\n')
 }
@@ -319,21 +314,18 @@ export function winnerCircleSvgElement(
   return `<circle cx="${x}" cy="${y}" r="${LANE_SPACING_MM * unitsPerMm}" fill="none" stroke="${WINNER_CIRCLE_STROKE_COLOR}" stroke-width="${WINNER_CIRCLE_STROKE_MM * unitsPerMm}"/>`
 }
 
-export function laneLineSvgElements(
+export function segmentLaneLineSvgElement(
   cx: number,
   cy: number,
-  board: CribbageBoard,
+  holes: PolarPoint[],
   unitsPerMm: number,
 ): string {
+  if (holes.length < 2) return ''
   const padding = LANE_LINE_PADDING_MM * unitsPerMm
-  return scoringGroups(board)
-    .map((holes) => {
-      const start = polarToCanvas(cx, cy, holes[0], unitsPerMm)
-      const end = polarToCanvas(cx, cy, holes[holes.length - 1], unitsPerMm)
-      const [from, to] = extendSegment(start, end, padding)
-      return `<line x1="${from[0]}" y1="${from[1]}" x2="${to[0]}" y2="${to[1]}" stroke="${LANE_LINE_COLOR}" stroke-width="${LANE_LINE_STROKE_MM * unitsPerMm}" stroke-linecap="round"/>`
-    })
-    .join('\n')
+  const start = polarToCanvas(cx, cy, holes[0], unitsPerMm)
+  const end = polarToCanvas(cx, cy, holes[holes.length - 1], unitsPerMm)
+  const [from, to] = extendSegment(start, end, padding)
+  return `<line x1="${from[0]}" y1="${from[1]}" x2="${to[0]}" y2="${to[1]}" stroke="${LANE_LINE_COLOR}" stroke-width="${LANE_LINE_STROKE_MM * unitsPerMm}" stroke-linecap="round"/>`
 }
 
 export function logoSvgElements(cx: number, cy: number, unitsPerMm: number): string {
@@ -359,7 +351,6 @@ export function artworkSvgElements(
 ): string {
   return [
     logoSvgElements(cx, cy, unitsPerMm),
-    laneLineSvgElements(cx, cy, board, unitsPerMm),
     readyBoxSvgElement(cx, cy, board, unitsPerMm),
     winnerCircleSvgElement(cx, cy, board, unitsPerMm),
   ]
@@ -373,9 +364,8 @@ export function drawReadyBoxPdf(
   cy: number,
   board: CribbageBoard,
 ) {
-  pdf.setFillColor(219, 234, 254)
   pdf.setDrawColor(...hexRgb(READY_BOX_STROKE_COLOR))
-  pdf.setLineWidth(0.35)
+  pdf.setLineWidth(READY_BOX_STROKE_MM)
   for (const corners of readyTrapezoids(board)) {
     const points = corners.map((corner) => polarToCanvas(cx, cy, corner, 1))
     if (points.length < 3) continue
@@ -384,7 +374,7 @@ export function drawReadyBoxPdf(
       pdf.lineTo(points[i][0], points[i][1])
     }
     pdf.lineTo(points[0][0], points[0][1])
-    pdf.fillStroke()
+    pdf.stroke()
   }
 }
 

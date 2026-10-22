@@ -40,22 +40,27 @@ export const LANE_BACKGROUND_COLORS = [
   'rgba(59, 130, 246, 0.5)',
 ] as const
 
-/** Artwork: trapezoid around the six READY holes on the first segment. */
-export const READY_BOX_STROKE_COLOR = '#2563eb'
-export const READY_BOX_FILL_COLOR = 'rgba(37, 99, 235, 0.12)'
+/** Artwork: one box around each lane's READY hole pair. */
+export const READY_BOX_STROKE_COLOR = '#0000ff'
+export const READY_BOX_STROKE_MM = 0.1
 export const READY_BOX_PADDING_MM = 3
 
 /** Artwork: WINNER circle on the first lane's finish hole. */
-export const WINNER_CIRCLE_STROKE_COLOR = '#ca8a04'
+export const WINNER_CIRCLE_STROKE_COLOR = '#0000ff'
 export const WINNER_CIRCLE_STROKE_MM = 2
 
-/** Artwork: thin line through each 5-hole group. */
-export const LANE_LINE_COLOR = '#a1a1aa'
-export const LANE_LINE_STROKE_MM = 0.35
+/** Artwork: hole ring. */
+export const ARTWORK_HOLE_COLOR = '#0000ff'
+export const ARTWORK_HOLE_RADIUS_MM = 1.5
+export const ARTWORK_HOLE_STROKE_MM = 1.5
+
+/** Artwork: line through each 5-hole group. */
+export const LANE_LINE_COLOR = '#0000ff'
+export const LANE_LINE_STROKE_MM = 1
 export const LANE_LINE_PADDING_MM = 1.5
 
 /** Artwork: center logo hexagon. */
 export const LOGO_SIDE_MM = 40
-export const LOGO_STROKE_COLOR = '#cfcfcf'
+export const LOGO_STROKE_COLOR = '#000000'
 export const LOGO_STROKE_MM = 0.6
 export const LOGO_TRISECT_THETAS = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3] as const
