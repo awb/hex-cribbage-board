@@ -11,7 +11,10 @@ export function diagramSizeCm(circumradiusMm: number): { widthCm: number; height
   }
 }
 
-export const LINE_COLOR = '#18181b'
+export const LINE_COLOR = '#0000ff'
+
+/** Board outline hexagon stroke. */
+export const BOARD_OUTLINE_COLOR = '#ff0000'
 
 /** Light grey for the three lines that trisect the board outline. */
 export const SECTION_LINE_COLOR = '#e4e4e7'

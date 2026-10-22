@@ -1,18 +1,21 @@
-import { artworkSvgElements, drawArtworkCanvas } from './drawArtwork'
-import { drawBoardHolesCanvas, holeSvgElements, type HoleStyle } from './drawHoles'
+import { HOLES_PER_GROUP } from './constants'
+import { artworkSvgElements, drawArtworkCanvas, segmentLaneLineSvgElement } from './drawArtwork'
+import { drawBoardHolesCanvas, holeSvgElements, holesSvgElements, type HoleStyle } from './drawHoles'
 import {
   drawLaneBackgroundsCanvas,
   drawLaneSpiralLinesCanvas,
   laneBackgroundSvgElements,
   laneSpiralLineSvgElements,
 } from './drawLanes'
-import { BOARD_OUTLINE_LINE_WIDTH_PX, LINE_COLOR, SECTION_LINE_COLOR } from './geometry'
+import { BOARD_OUTLINE_COLOR, BOARD_OUTLINE_LINE_WIDTH_PX, LINE_COLOR, SECTION_LINE_COLOR } from './geometry'
 import { polarToCanvas } from './polar'
 import type { BoardRepresentation } from './representations'
 import type { BoardOutline, CribbageBoard, PolarPoint } from './types'
 
 function holeStyleForRepresentation(representation: BoardRepresentation): HoleStyle {
-  return representation === 'drill-template' ? 'crosshair' : 'disk'
+  if (representation === 'drill-template') return 'crosshair'
+  if (representation === 'artwork') return 'ring'
+  return 'disk'
 }
 
 function outlineCanvasPoints(
@@ -87,7 +90,45 @@ function strokeOutlineCanvas(
   }
 }
 
-function outlineSvgElements(
+function svgLayer(id: string, content: string): string {
+  const inner = content.trim()
+  if (!inner) return ''
+  return `<g id="${id}" inkscape:groupmode="layer" inkscape:label="${id}">\n${inner}\n</g>`
+}
+
+function svgGroup(id: string, content: string): string {
+  const inner = content.trim()
+  if (!inner) return ''
+  return `<g id="${id}">\n${inner}\n</g>`
+}
+
+function trackSegmentSvgElements(
+  cx: number,
+  cy: number,
+  board: CribbageBoard,
+  unitsPerMm: number,
+  holeStyle: HoleStyle,
+): string {
+  const groups: string[] = []
+  let segmentNumber = 0
+
+  for (const lane of board.track.lanes) {
+    for (const segment of lane.segments) {
+      segmentNumber += 1
+      const parts = [
+        segment.holes.length === HOLES_PER_GROUP
+          ? segmentLaneLineSvgElement(cx, cy, segment.holes, unitsPerMm)
+          : '',
+        holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR),
+      ]
+      groups.push(svgGroup(`segment-${segmentNumber}`, parts.filter(Boolean).join('\n')))
+    }
+  }
+
+  return groups.filter(Boolean).join('\n')
+}
+
+function outlineHexSvgElement(
   cx: number,
   cy: number,
   outline: BoardOutline,
@@ -98,19 +139,38 @@ function outlineSvgElements(
   const polygonPoints = outlineCanvasPoints(cx, cy, outline, unitsPerMm)
     .map(([x, y]) => `${x},${y}`)
     .join(' ')
+  return `<polygon points="${polygonPoints}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}"/>`
+}
 
-  const elements = [
-    `<polygon points="${polygonPoints}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}"/>`,
+function sectionLineSvgElements(
+  cx: number,
+  cy: number,
+  outline: BoardOutline,
+  unitsPerMm: number,
+  strokeWidth: number,
+): string {
+  return outline.sectionLines
+    .map((line) => {
+      const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, unitsPerMm)
+      return `<line x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}" stroke="${SECTION_LINE_COLOR}" stroke-width="${strokeWidth}"/>`
+    })
+    .join('\n')
+}
+
+function outlineSvgElements(
+  cx: number,
+  cy: number,
+  outline: BoardOutline,
+  unitsPerMm: number,
+  stroke: string,
+  strokeWidth: number,
+): string {
+  return [
+    outlineHexSvgElement(cx, cy, outline, unitsPerMm, stroke, strokeWidth),
+    sectionLineSvgElements(cx, cy, outline, unitsPerMm, strokeWidth),
   ]
-
-  for (const line of outline.sectionLines) {
-    const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, unitsPerMm)
-    elements.push(
-      `<line x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}" stroke="${SECTION_LINE_COLOR}" stroke-width="${strokeWidth}"/>`,
-    )
-  }
-
-  return elements.join('\n')
+    .filter(Boolean)
+    .join('\n')
 }
 
 export function drawBoardCanvas(
@@ -151,7 +211,7 @@ export function drawBoardCanvas(
     board.outline,
     unitsPerMm,
     BOARD_OUTLINE_LINE_WIDTH_PX,
-    LINE_COLOR,
+    BOARD_OUTLINE_COLOR,
   )
   drawBoardHolesCanvas(
     ctx,
@@ -186,7 +246,23 @@ export function boardSvgElements(
   }
 
   if (representation === 'artwork') {
-    elements.push(artworkSvgElements(cx, cy, board, unitsPerMm))
+    return [
+      svgLayer('artwork', artworkSvgElements(cx, cy, board, unitsPerMm)),
+      svgLayer('track', trackSegmentSvgElements(cx, cy, board, unitsPerMm, holeStyle)),
+      svgLayer(
+        'outline',
+        outlineHexSvgElement(
+          cx,
+          cy,
+          board.outline,
+          unitsPerMm,
+          BOARD_OUTLINE_COLOR,
+          BOARD_OUTLINE_LINE_WIDTH_PX,
+        ),
+      ),
+    ]
+      .filter(Boolean)
+      .join('\n')
   }
 
   elements.push(
@@ -195,7 +271,7 @@ export function boardSvgElements(
       cy,
       board.outline,
       unitsPerMm,
-      LINE_COLOR,
+      BOARD_OUTLINE_COLOR,
       BOARD_OUTLINE_LINE_WIDTH_PX,
     ),
   )
@@ -212,7 +288,7 @@ export function drawBoardOutlinePdf(
 ) {
   const points = outlineCanvasPoints(cx, cy, outline, 1)
   if (points.length >= 2) {
-    pdf.setDrawColor(24, 24, 27)
+    pdf.setDrawColor(255, 0, 0)
     pdf.moveTo(points[0][0], points[0][1])
     for (let i = 1; i < points.length; i++) {
       pdf.lineTo(points[i][0], points[i][1])

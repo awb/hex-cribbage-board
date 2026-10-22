@@ -16,7 +16,9 @@ const CM_TO_MM = 10
 const MARGIN_MM = 10
 
 function holeStyleForRepresentation(representation: BoardRepresentation): HoleStyle {
-  return representation === 'drill-template' ? 'crosshair' : 'disk'
+  if (representation === 'drill-template') return 'crosshair'
+  if (representation === 'artwork') return 'ring'
+  return 'disk'
 }
 
 export function exportHexagonPdf(
