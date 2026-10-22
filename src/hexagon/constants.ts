@@ -12,7 +12,7 @@ export const HOLES_PER_GROUP = 5
 export const STARTER_HOLE_INDICES = [3, 4] as const
 
 /** 0-based indices of holes kept on the finish segment (1st of 5). */
-export const FINISH_HOLE_INDICES = [0] as const
+export const FINISH_HOLE_INDICES = [1] as const
 
 /** Scoring-track vertices (24 segments × 5 holes = 120 holes). */
 export const SPIRAL_VERTEX_COUNT = TRACK_LENGTH_HOLES / HOLES_PER_GROUP + 1
@@ -25,7 +25,7 @@ export const HOLE_CROSS_LENGTH_MM = 4
 
 export const LANE_COUNT = 3
 /** 0-based first lane; receives the single-hole finish segment. */
-export const FINISH_LANE_INDEX = 0
+export const FINISH_LANE_INDEX = 1
 
 /** Radial drop per full turn: room for all lanes plus gap before the next turn. */
 export const TURN_DELTA_RADIUS_MM = LANE_COUNT * LANE_SPACING_MM + TRACK_SPACING_MM
@@ -56,6 +56,6 @@ export const LANE_LINE_PADDING_MM = 1.5
 
 /** Artwork: center logo hexagon. */
 export const LOGO_SIDE_MM = 40
-export const LOGO_STROKE_COLOR = '#18181b'
+export const LOGO_STROKE_COLOR = '#cfcfcf'
 export const LOGO_STROKE_MM = 0.6
 export const LOGO_TRISECT_THETAS = [0, (2 * Math.PI) / 3, (4 * Math.PI) / 3] as const

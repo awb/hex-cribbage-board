@@ -162,7 +162,7 @@ function logoVertices(): PolarPoint[] {
 
 function logoTrisectPairs(): [PolarPoint, PolarPoint][] {
   return LOGO_TRISECT_THETAS.map((theta) => [
-    { r: LOGO_SIDE_MM, theta },
+    { r: 0, theta: 0 },
     { r: LOGO_SIDE_MM, theta: theta + Math.PI },
   ])
 }
@@ -273,6 +273,7 @@ export function drawLogoCanvas(
     ctx.moveTo(a[0], a[1])
     ctx.lineTo(b[0], b[1])
   }
+  ctx.strokeStyle = '#ff8080'
   ctx.stroke()
 }
 

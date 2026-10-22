@@ -14,4 +14,4 @@ export const REPRESENTATION_LABELS: Record<BoardRepresentation, string> = {
   artwork: 'Artwork',
 }
 
-export const DEFAULT_REPRESENTATION: BoardRepresentation = 'color'
+export const DEFAULT_REPRESENTATION: BoardRepresentation = 'artwork'
