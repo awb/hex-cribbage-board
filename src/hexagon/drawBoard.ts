@@ -1,4 +1,4 @@
-import { HOLES_PER_GROUP } from './constants'
+import { FINISH_LANE_INDEX, HOLES_PER_GROUP, TRACK_LENGTH_HOLES } from './constants'
 import { artworkSvgElements, drawArtworkCanvas, segmentLaneLineSvgElement } from './drawArtwork'
 import { drawBoardHolesCanvas, holeSvgElements, holesSvgElements, type HoleStyle } from './drawHoles'
 import {
@@ -102,30 +102,63 @@ function svgGroup(id: string, content: string): string {
   return `<g id="${id}">\n${inner}\n</g>`
 }
 
-function trackSegmentSvgElements(
+function padTrackPosition(position: number): string {
+  return String(position).padStart(3, '0')
+}
+
+function artworkTrackSvgElements(
   cx: number,
   cy: number,
   board: CribbageBoard,
   unitsPerMm: number,
   holeStyle: HoleStyle,
 ): string {
-  const groups: string[] = []
-  let segmentNumber = 0
+  const lines: string[] = []
+  const holeGroups: string[] = []
 
-  for (const lane of board.track.lanes) {
+  for (const [laneIndex, lane] of board.track.lanes.entries()) {
+    let trackPosition = 0
+
     for (const segment of lane.segments) {
-      segmentNumber += 1
-      const parts = [
-        segment.holes.length === HOLES_PER_GROUP
-          ? segmentLaneLineSvgElement(cx, cy, segment.holes, unitsPerMm)
-          : '',
-        holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR),
-      ]
-      groups.push(svgGroup(`segment-${segmentNumber}`, parts.filter(Boolean).join('\n')))
+      if (segment.holes.length === HOLES_PER_GROUP) {
+        const position = padTrackPosition(trackPosition)
+        lines.push(
+          segmentLaneLineSvgElement(cx, cy, segment.holes, unitsPerMm, `line-${laneIndex}-${position}`),
+        )
+        const ids = segment.holes.map((_, holeIndex) => `hole-${laneIndex}-${position}-${holeIndex}`)
+        holeGroups.push(
+          svgGroup(
+            `segment-${laneIndex}-${position}`,
+            holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, ids),
+          ),
+        )
+        trackPosition += HOLES_PER_GROUP
+        continue
+      }
+
+      if (laneIndex === FINISH_LANE_INDEX && segment.holes.length === 1) {
+        holeGroups.push(
+          svgGroup(
+            `segment-${laneIndex}-${padTrackPosition(TRACK_LENGTH_HOLES)}`,
+            holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, [
+              'hole-winner',
+            ]),
+          ),
+        )
+        continue
+      }
+
+      const ids = segment.holes.map((_, holeIndex) => `hole-ready-${laneIndex}-${holeIndex}`)
+      holeGroups.push(
+        svgGroup(
+          `segment-${laneIndex}-ready`,
+          holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, ids),
+        ),
+      )
     }
   }
 
-  return groups.filter(Boolean).join('\n')
+  return [svgGroup('segment-lines', lines.join('\n')), ...holeGroups].filter(Boolean).join('\n')
 }
 
 function outlineHexSvgElement(
@@ -248,7 +281,7 @@ export function boardSvgElements(
   if (representation === 'artwork') {
     return [
       svgLayer('artwork', artworkSvgElements(cx, cy, board, unitsPerMm)),
-      svgLayer('track', trackSegmentSvgElements(cx, cy, board, unitsPerMm, holeStyle)),
+      artworkTrackSvgElements(cx, cy, board, unitsPerMm, holeStyle),
       svgLayer(
         'outline',
         outlineHexSvgElement(

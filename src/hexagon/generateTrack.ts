@@ -1,4 +1,5 @@
 import { FINISH_LANE_INDEX, LANE_BACKGROUND_COLORS, LANE_COUNT, LANE_SPACING_MM } from './constants'
+import { TRACK_ROTATION_RAD } from './geometry'
 import { generateLane } from './generateLane'
 import type { LayoutConfig } from './layouts'
 import type { PolarPoint, Track } from './types'
@@ -37,7 +38,7 @@ export function generateTrack(
     const lane = generateLane(
       {
         r: startingPoint.r - laneIndex * LANE_SPACING_MM,
-        theta: startingPoint.theta + layout.pathStartOffsetInRadians,
+        theta: startingPoint.theta + layout.pathStartOffsetInRadians + TRACK_ROTATION_RAD,
       },
       vertexDeltaRadius,
       deltaTheta,

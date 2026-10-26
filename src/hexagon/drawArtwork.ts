@@ -319,13 +319,15 @@ export function segmentLaneLineSvgElement(
   cy: number,
   holes: PolarPoint[],
   unitsPerMm: number,
+  id?: string,
 ): string {
   if (holes.length < 2) return ''
   const padding = LANE_LINE_PADDING_MM * unitsPerMm
   const start = polarToCanvas(cx, cy, holes[0], unitsPerMm)
   const end = polarToCanvas(cx, cy, holes[holes.length - 1], unitsPerMm)
   const [from, to] = extendSegment(start, end, padding)
-  return `<line x1="${from[0]}" y1="${from[1]}" x2="${to[0]}" y2="${to[1]}" stroke="${LANE_LINE_COLOR}" stroke-width="${LANE_LINE_STROKE_MM * unitsPerMm}" stroke-linecap="round"/>`
+  const idAttr = id ? ` id="${id}"` : ''
+  return `<line${idAttr} x1="${from[0]}" y1="${from[1]}" x2="${to[0]}" y2="${to[1]}" stroke="${LANE_LINE_COLOR}" stroke-width="${LANE_LINE_STROKE_MM * unitsPerMm}" stroke-linecap="round"/>`
 }
 
 export function logoSvgElements(cx: number, cy: number, unitsPerMm: number): string {
@@ -350,7 +352,7 @@ export function artworkSvgElements(
   unitsPerMm: number,
 ): string {
   return [
-    logoSvgElements(cx, cy, unitsPerMm),
+    `<g id="logo">\n${logoSvgElements(cx, cy, unitsPerMm)}\n</g>`,
     readyBoxSvgElement(cx, cy, board, unitsPerMm),
     winnerCircleSvgElement(cx, cy, board, unitsPerMm),
   ]

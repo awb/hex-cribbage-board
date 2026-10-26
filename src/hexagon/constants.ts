@@ -49,10 +49,11 @@ export const READY_BOX_PADDING_MM = 3
 export const WINNER_CIRCLE_STROKE_COLOR = '#0000ff'
 export const WINNER_CIRCLE_STROKE_MM = 2
 
-/** Artwork: hole ring. */
-export const ARTWORK_HOLE_COLOR = '#0000ff'
-export const ARTWORK_HOLE_RADIUS_MM = 1.5
-export const ARTWORK_HOLE_STROKE_MM = 1.5
+/** Artwork: hole ring. Width/height 2.85 mm, hairline red stroke. */
+export const ARTWORK_HOLE_COLOR = '#ff0000'
+export const ARTWORK_HOLE_SIZE_MM = 2.85
+export const ARTWORK_HOLE_RADIUS_MM = ARTWORK_HOLE_SIZE_MM / 2
+export const ARTWORK_HOLE_STROKE_MM = 0.025
 
 /** Artwork: line through each 5-hole group. */
 export const LANE_LINE_COLOR = '#0000ff'

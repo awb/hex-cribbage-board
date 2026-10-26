@@ -1,6 +1,7 @@
 import {
   ARTWORK_HOLE_COLOR,
   ARTWORK_HOLE_RADIUS_MM,
+  ARTWORK_HOLE_SIZE_MM,
   ARTWORK_HOLE_STROKE_MM,
   HOLE_CROSS_LENGTH_MM,
   HOLE_DIAMETER_MM,
@@ -78,6 +79,36 @@ export function drawBoardHolesCanvas(
   }
 }
 
+export function holeSvgElement(
+  cx: number,
+  cy: number,
+  hole: PolarPoint,
+  unitsPerMm: number,
+  style: HoleStyle,
+  fill = '#18181b',
+  stroke = '#18181b',
+  id?: string,
+): string {
+  const [x, y] = polarToCanvas(cx, cy, hole, unitsPerMm)
+  const radius = (HOLE_DIAMETER_MM / 2) * unitsPerMm
+  const idAttr = id ? ` id="${id}"` : ''
+
+  if (style === 'disk') {
+    return `<circle${idAttr} cx="${x}" cy="${y}" r="${radius}" fill="${fill}" stroke="none"/>`
+  }
+
+  if (style === 'ring') {
+    return `<circle${idAttr} cx="${x}" cy="${y}" r="${ARTWORK_HOLE_RADIUS_MM * unitsPerMm}" width="${ARTWORK_HOLE_SIZE_MM * unitsPerMm}" height="${ARTWORK_HOLE_SIZE_MM * unitsPerMm}" fill="none" stroke="${ARTWORK_HOLE_COLOR}" stroke-width="${ARTWORK_HOLE_STROKE_MM * unitsPerMm}"/>`
+  }
+
+  const crossHalf = (HOLE_CROSS_LENGTH_MM / 2) * unitsPerMm
+  return [
+    `<circle${idAttr} cx="${x}" cy="${y}" r="${radius}" fill="none" stroke="${stroke}" stroke-width="0.5"/>`,
+    `<line x1="${x - crossHalf}" y1="${y}" x2="${x + crossHalf}" y2="${y}" stroke="${stroke}" stroke-width="0.5"/>`,
+    `<line x1="${x}" y1="${y - crossHalf}" x2="${x}" y2="${y + crossHalf}" stroke="${stroke}" stroke-width="0.5"/>`,
+  ].join('\n')
+}
+
 export function holesSvgElements(
   cx: number,
   cy: number,
@@ -86,35 +117,11 @@ export function holesSvgElements(
   style: HoleStyle,
   fill = '#18181b',
   stroke = '#18181b',
+  ids?: string[],
 ): string {
-  const elements: string[] = []
-
-  for (const hole of holes) {
-    const [x, y] = polarToCanvas(cx, cy, hole, unitsPerMm)
-    const radius = (HOLE_DIAMETER_MM / 2) * unitsPerMm
-
-    if (style === 'disk') {
-      elements.push(`<circle cx="${x}" cy="${y}" r="${radius}" fill="${fill}" stroke="none"/>`)
-      continue
-    }
-
-    if (style === 'ring') {
-      elements.push(
-        `<circle cx="${x}" cy="${y}" r="${ARTWORK_HOLE_RADIUS_MM * unitsPerMm}" fill="none" stroke="${ARTWORK_HOLE_COLOR}" stroke-width="${ARTWORK_HOLE_STROKE_MM * unitsPerMm}"/>`,
-      )
-      continue
-    }
-
-    const crossHalf = (HOLE_CROSS_LENGTH_MM / 2) * unitsPerMm
-
-    elements.push(
-      `<circle cx="${x}" cy="${y}" r="${radius}" fill="none" stroke="${stroke}" stroke-width="0.5"/>`,
-      `<line x1="${x - crossHalf}" y1="${y}" x2="${x + crossHalf}" y2="${y}" stroke="${stroke}" stroke-width="0.5"/>`,
-      `<line x1="${x}" y1="${y - crossHalf}" x2="${x}" y2="${y + crossHalf}" stroke="${stroke}" stroke-width="0.5"/>`,
-    )
-  }
-
-  return elements.join('\n')
+  return holes
+    .map((hole, index) => holeSvgElement(cx, cy, hole, unitsPerMm, style, fill, stroke, ids?.[index]))
+    .join('\n')
 }
 
 export function holeSvgElements(
@@ -158,7 +165,7 @@ export function drawBoardHolesPdf(
         }
 
         if (style === 'ring') {
-          pdf.setDrawColor(0, 0, 255)
+          pdf.setDrawColor(255, 0, 0)
           pdf.setLineWidth(ARTWORK_HOLE_STROKE_MM)
           pdf.circle(x, y, ARTWORK_HOLE_RADIUS_MM, 'S')
           continue
