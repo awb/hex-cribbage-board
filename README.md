@@ -101,10 +101,13 @@ Artwork constants (colors and padding from hole positions):
 
 ```typescript
 READY_BOX_PADDING_MM = 3
-READY_BOX_STROKE_MM = 0.1
-WINNER_CIRCLE_STROKE_MM = 2         // radius is LANE_SPACING_MM
-ARTWORK_HOLE_RADIUS_MM = 1.5
-ARTWORK_HOLE_STROKE_MM = 1.5
+READY_BOX_STROKE_MM = 1
+WINNER_CIRCLE_STROKE_MM = 2
+WINNER_CIRCLE_RADIUS_MM = LANE_SPACING_MM
+WINNER_CIRCLE_INNER_RADIUS_MM = LANE_SPACING_MM / 2
+ARTWORK_HOLE_SIZE_MM = 2.85
+ARTWORK_HOLE_STROKE_MM = 0.025
+ARTWORK_HOLE_COLOR = #ff0000
 LANE_LINE_STROKE_MM = 1
 LANE_LINE_PADDING_MM = 1.5
 LOGO_SIDE_MM = 40
@@ -184,7 +187,7 @@ Build a lane by calling the layout's `spiral` function for vertex endpoints, the
 
 #### `generateBoardOutline`
 
-Circumradius = outermost hole radius / `(√3/2)`. Vertices sit at `θ = π/6 + iπ/3`. Three section lines trisect the outline.
+Circumradius = outermost hole radius / `(√3/2)`. Vertices sit at `θ = iπ/3`. Three section lines trisect the outline at `θ = 2iπ/3 − π/3` (π/3 counter-clockwise from the vertices). The drawing is rotated so the hex is flat-top (vertices left and right). The track is rotated π/6 clockwise relative to the outline so READY/WINNER sit toward the top.
 
 #### `generateSegment`
 
@@ -194,21 +197,22 @@ Calculate hole locations along a straight segment between successive vertices. H
 
 Representations (UI toggle; applies to canvas, PDF, and SVG):
 
-- **Drill template** — outline, light-grey section lines, crosshair holes.
+- **Drill template** — outline, grey 2 mm section lines, crosshair holes.
 - **Color** — translucent red/green/blue lane ribbons, outline, disk holes.
 - **Lined** — grey spiral through hole centers, outline, disk holes.
 - **Artwork** — four items, each drawn by its own function:
   - **READY boxes** — one unfilled trapezoid per lane around that lane's READY hole pair. Inner and outer sides are parallel to the board outline; the other two sides are rays from the board center. Stroke is `READY_BOX_STROKE_MM` blue. Padding is `READY_BOX_PADDING_MM`.
-  - **WINNER circle** — circle of radius `LANE_SPACING_MM` and 2 mm stroke, centered on the single finish hole of the first lane.
-  - **Holes** — unfilled blue rings, radius `ARTWORK_HOLE_RADIUS_MM`, stroke `ARTWORK_HOLE_STROKE_MM`.
+  - **WINNER circles** — two concentric rings of 2 mm stroke, centered on the single finish hole of the first lane. The outer radius is `WINNER_CIRCLE_RADIUS_MM`; the inner radius is `WINNER_CIRCLE_INNER_RADIUS_MM`.
+  - **Holes** — unfilled red rings, width/height `ARTWORK_HOLE_SIZE_MM`, stroke `ARTWORK_HOLE_STROKE_MM`.
   - **LANE_LINE** — 1 mm blue line through the center of each group of 5 holes, extended by `LANE_LINE_PADDING_MM`.
-  - **LOGO** — hexagon with 40 mm sides in the board center, trisected at `θ = [0, 2π/3, 4π/3]`.
+  - **LOGO** — hexagon with 40 mm sides in the board center, trisected at `θ = [0, 2π/3, 4π/3]`. Currently suppressed (`SHOW_LOGO = false`).
 
-The board outline hexagon is red (`BOARD_OUTLINE_COLOR`). The three lines that trisect it are light grey (`SECTION_LINE_COLOR`). The logo hexagon and its trisection lines are black.
+The board outline hexagon is red (`BOARD_OUTLINE_COLOR`). The three section lines are grey (`SECTION_LINE_COLOR`) at `SECTION_LINE_STROKE_MM`. The logo hexagon and its trisection lines are black when shown.
 
-Artwork SVG export uses named layers:
-- **`artwork`** — logo, READY boxes, and WINNER circle
-- **`track`** — one group per segment with its holes and, for each 5-hole scoring segment, the connecting lane line
-- **`outline`** — the board outline hex
+Artwork SVG export uses named groups. The root `svg` width and height are in millimetres.
+- **`artwork`** — READY boxes, WINNER circles, and a nested `logo` group when `SHOW_LOGO` is on
+- **`segment-lines`** — `line-a-b` for each 5-hole scoring segment (`a` = lane, `b` = track position 000–115)
+- **`segment-a-b`** — holes for that segment (`hole-a-b-c`, `hole-ready-a-b`, or `hole-winner`)
+- **`outline`** — the board outline hex and section lines
 
 The HTML header lists board attributes (outline, spacing, hole counts, layout, view) in a table.

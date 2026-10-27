@@ -1,7 +1,7 @@
 import type { CartesianPoint, PolarPoint } from './types'
 import { BOARD_DRAWING_ROTATION_RAD } from './geometry'
 
-/** Convert polar mm coordinates to Cartesian mm (theta = 0 at the top vertex). */
+/** Convert polar mm coordinates to Cartesian mm (theta = 0 at the top). */
 export function polarToCartesianMm(point: PolarPoint): CartesianPoint {
   const angle = point.theta - Math.PI / 2
   return {

@@ -4,14 +4,16 @@ import {
   LANE_LINE_COLOR,
   LANE_LINE_PADDING_MM,
   LANE_LINE_STROKE_MM,
-  LANE_SPACING_MM,
   LOGO_SIDE_MM,
   LOGO_STROKE_COLOR,
   LOGO_STROKE_MM,
   LOGO_TRISECT_THETAS,
+  SHOW_LOGO,
   READY_BOX_PADDING_MM,
   READY_BOX_STROKE_COLOR,
   READY_BOX_STROKE_MM,
+  WINNER_CIRCLE_INNER_RADIUS_MM,
+  WINNER_CIRCLE_RADIUS_MM,
   WINNER_CIRCLE_STROKE_COLOR,
   WINNER_CIRCLE_STROKE_MM,
 } from './constants'
@@ -131,6 +133,10 @@ function winnerHole(board: CribbageBoard): PolarPoint | undefined {
   return segment?.holes[0]
 }
 
+function winnerCircleRadiiMm(): number[] {
+  return [WINNER_CIRCLE_RADIUS_MM, WINNER_CIRCLE_INNER_RADIUS_MM]
+}
+
 function scoringGroups(board: CribbageBoard): PolarPoint[][] {
   return board.track.lanes.flatMap((lane) =>
     lane.segments.filter((segment) => segment.holes.length === HOLES_PER_GROUP).map((segment) => segment.holes),
@@ -214,11 +220,13 @@ export function drawWinnerCircleCanvas(
   if (!hole) return
 
   const [x, y] = polarToCanvas(cx, cy, hole, unitsPerMm)
-  ctx.beginPath()
-  ctx.arc(x, y, LANE_SPACING_MM * unitsPerMm, 0, 2 * Math.PI)
   ctx.strokeStyle = WINNER_CIRCLE_STROKE_COLOR
   ctx.lineWidth = WINNER_CIRCLE_STROKE_MM * unitsPerMm
-  ctx.stroke()
+  for (const radiusMm of winnerCircleRadiiMm()) {
+    ctx.beginPath()
+    ctx.arc(x, y, radiusMm * unitsPerMm, 0, 2 * Math.PI)
+    ctx.stroke()
+  }
 }
 
 export function drawLaneLinesCanvas(
@@ -279,7 +287,7 @@ export function drawArtworkCanvas(
   board: CribbageBoard,
   unitsPerMm: number,
 ) {
-  drawLogoCanvas(ctx, cx, cy, unitsPerMm)
+  if (SHOW_LOGO) drawLogoCanvas(ctx, cx, cy, unitsPerMm)
   drawLaneLinesCanvas(ctx, cx, cy, board, unitsPerMm)
   drawReadyBoxCanvas(ctx, cx, cy, board, unitsPerMm)
   drawWinnerCircleCanvas(ctx, cx, cy, board, unitsPerMm)
@@ -311,7 +319,12 @@ export function winnerCircleSvgElement(
   const hole = winnerHole(board)
   if (!hole) return ''
   const [x, y] = polarToCanvas(cx, cy, hole, unitsPerMm)
-  return `<circle cx="${x}" cy="${y}" r="${LANE_SPACING_MM * unitsPerMm}" fill="none" stroke="${WINNER_CIRCLE_STROKE_COLOR}" stroke-width="${WINNER_CIRCLE_STROKE_MM * unitsPerMm}"/>`
+  return winnerCircleRadiiMm()
+    .map(
+      (radiusMm) =>
+        `<circle cx="${x}" cy="${y}" r="${radiusMm * unitsPerMm}" fill="none" stroke="${WINNER_CIRCLE_STROKE_COLOR}" stroke-width="${WINNER_CIRCLE_STROKE_MM * unitsPerMm}"/>`,
+    )
+    .join('\n')
 }
 
 export function segmentLaneLineSvgElement(
@@ -319,13 +332,15 @@ export function segmentLaneLineSvgElement(
   cy: number,
   holes: PolarPoint[],
   unitsPerMm: number,
+  id?: string,
 ): string {
   if (holes.length < 2) return ''
   const padding = LANE_LINE_PADDING_MM * unitsPerMm
   const start = polarToCanvas(cx, cy, holes[0], unitsPerMm)
   const end = polarToCanvas(cx, cy, holes[holes.length - 1], unitsPerMm)
   const [from, to] = extendSegment(start, end, padding)
-  return `<line x1="${from[0]}" y1="${from[1]}" x2="${to[0]}" y2="${to[1]}" stroke="${LANE_LINE_COLOR}" stroke-width="${LANE_LINE_STROKE_MM * unitsPerMm}" stroke-linecap="round"/>`
+  const idAttr = id ? ` id="${id}"` : ''
+  return `<line${idAttr} x1="${from[0]}" y1="${from[1]}" x2="${to[0]}" y2="${to[1]}" stroke="${LANE_LINE_COLOR}" stroke-width="${LANE_LINE_STROKE_MM * unitsPerMm}" stroke-linecap="round"/>`
 }
 
 export function logoSvgElements(cx: number, cy: number, unitsPerMm: number): string {
@@ -350,7 +365,7 @@ export function artworkSvgElements(
   unitsPerMm: number,
 ): string {
   return [
-    logoSvgElements(cx, cy, unitsPerMm),
+    SHOW_LOGO ? `<g id="logo">\n${logoSvgElements(cx, cy, unitsPerMm)}\n</g>` : '',
     readyBoxSvgElement(cx, cy, board, unitsPerMm),
     winnerCircleSvgElement(cx, cy, board, unitsPerMm),
   ]
@@ -389,7 +404,9 @@ export function drawWinnerCirclePdf(
   const [x, y] = polarToCanvas(cx, cy, hole, 1)
   pdf.setDrawColor(...hexRgb(WINNER_CIRCLE_STROKE_COLOR))
   pdf.setLineWidth(WINNER_CIRCLE_STROKE_MM)
-  pdf.circle(x, y, LANE_SPACING_MM, 'S')
+  for (const radiusMm of winnerCircleRadiiMm()) {
+    pdf.circle(x, y, radiusMm, 'S')
+  }
 }
 
 export function drawLaneLinesPdf(
@@ -432,7 +449,7 @@ export function drawArtworkPdf(
   cy: number,
   board: CribbageBoard,
 ) {
-  drawLogoPdf(pdf, cx, cy)
+  if (SHOW_LOGO) drawLogoPdf(pdf, cx, cy)
   drawLaneLinesPdf(pdf, cx, cy, board)
   drawReadyBoxPdf(pdf, cx, cy, board)
   drawWinnerCirclePdf(pdf, cx, cy, board)

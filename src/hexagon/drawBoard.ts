@@ -1,4 +1,4 @@
-import { HOLES_PER_GROUP } from './constants'
+import { FINISH_LANE_INDEX, HOLES_PER_GROUP, TRACK_LENGTH_HOLES } from './constants'
 import { artworkSvgElements, drawArtworkCanvas, segmentLaneLineSvgElement } from './drawArtwork'
 import { drawBoardHolesCanvas, holeSvgElements, holesSvgElements, type HoleStyle } from './drawHoles'
 import {
@@ -7,7 +7,13 @@ import {
   laneBackgroundSvgElements,
   laneSpiralLineSvgElements,
 } from './drawLanes'
-import { BOARD_OUTLINE_COLOR, BOARD_OUTLINE_LINE_WIDTH_PX, LINE_COLOR, SECTION_LINE_COLOR } from './geometry'
+import {
+  BOARD_OUTLINE_COLOR,
+  BOARD_OUTLINE_LINE_WIDTH_PX,
+  LINE_COLOR,
+  SECTION_LINE_COLOR,
+  SECTION_LINE_STROKE_MM,
+} from './geometry'
 import { polarToCanvas } from './polar'
 import type { BoardRepresentation } from './representations'
 import type { BoardOutline, CribbageBoard, PolarPoint } from './types'
@@ -86,7 +92,7 @@ function strokeOutlineCanvas(
 
   for (const line of outline.sectionLines) {
     const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, unitsPerMm)
-    strokeLineCanvas(ctx, start, end, Math.max(1, lineWidth * 0.6), SECTION_LINE_COLOR)
+    strokeLineCanvas(ctx, start, end, SECTION_LINE_STROKE_MM * unitsPerMm, SECTION_LINE_COLOR)
   }
 }
 
@@ -102,30 +108,63 @@ function svgGroup(id: string, content: string): string {
   return `<g id="${id}">\n${inner}\n</g>`
 }
 
-function trackSegmentSvgElements(
+function padTrackPosition(position: number): string {
+  return String(position).padStart(3, '0')
+}
+
+function artworkTrackSvgElements(
   cx: number,
   cy: number,
   board: CribbageBoard,
   unitsPerMm: number,
   holeStyle: HoleStyle,
 ): string {
-  const groups: string[] = []
-  let segmentNumber = 0
+  const lines: string[] = []
+  const holeGroups: string[] = []
 
-  for (const lane of board.track.lanes) {
+  for (const [laneIndex, lane] of board.track.lanes.entries()) {
+    let trackPosition = 0
+
     for (const segment of lane.segments) {
-      segmentNumber += 1
-      const parts = [
-        segment.holes.length === HOLES_PER_GROUP
-          ? segmentLaneLineSvgElement(cx, cy, segment.holes, unitsPerMm)
-          : '',
-        holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR),
-      ]
-      groups.push(svgGroup(`segment-${segmentNumber}`, parts.filter(Boolean).join('\n')))
+      if (segment.holes.length === HOLES_PER_GROUP) {
+        const position = padTrackPosition(trackPosition)
+        lines.push(
+          segmentLaneLineSvgElement(cx, cy, segment.holes, unitsPerMm, `line-${laneIndex}-${position}`),
+        )
+        const ids = segment.holes.map((_, holeIndex) => `hole-${laneIndex}-${position}-${holeIndex}`)
+        holeGroups.push(
+          svgGroup(
+            `segment-${laneIndex}-${position}`,
+            holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, ids),
+          ),
+        )
+        trackPosition += HOLES_PER_GROUP
+        continue
+      }
+
+      if (laneIndex === FINISH_LANE_INDEX && segment.holes.length === 1) {
+        holeGroups.push(
+          svgGroup(
+            `segment-${laneIndex}-${padTrackPosition(TRACK_LENGTH_HOLES)}`,
+            holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, [
+              'hole-winner',
+            ]),
+          ),
+        )
+        continue
+      }
+
+      const ids = segment.holes.map((_, holeIndex) => `hole-ready-${laneIndex}-${holeIndex}`)
+      holeGroups.push(
+        svgGroup(
+          `segment-${laneIndex}-ready`,
+          holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, ids),
+        ),
+      )
     }
   }
 
-  return groups.filter(Boolean).join('\n')
+  return [svgGroup('segment-lines', lines.join('\n')), ...holeGroups].filter(Boolean).join('\n')
 }
 
 function outlineHexSvgElement(
@@ -147,8 +186,8 @@ function sectionLineSvgElements(
   cy: number,
   outline: BoardOutline,
   unitsPerMm: number,
-  strokeWidth: number,
 ): string {
+  const strokeWidth = SECTION_LINE_STROKE_MM * unitsPerMm
   return outline.sectionLines
     .map((line) => {
       const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, unitsPerMm)
@@ -167,7 +206,7 @@ function outlineSvgElements(
 ): string {
   return [
     outlineHexSvgElement(cx, cy, outline, unitsPerMm, stroke, strokeWidth),
-    sectionLineSvgElements(cx, cy, outline, unitsPerMm, strokeWidth),
+    sectionLineSvgElements(cx, cy, outline, unitsPerMm),
   ]
     .filter(Boolean)
     .join('\n')
@@ -248,17 +287,22 @@ export function boardSvgElements(
   if (representation === 'artwork') {
     return [
       svgLayer('artwork', artworkSvgElements(cx, cy, board, unitsPerMm)),
-      svgLayer('track', trackSegmentSvgElements(cx, cy, board, unitsPerMm, holeStyle)),
+      artworkTrackSvgElements(cx, cy, board, unitsPerMm, holeStyle),
       svgLayer(
         'outline',
-        outlineHexSvgElement(
-          cx,
-          cy,
-          board.outline,
-          unitsPerMm,
-          BOARD_OUTLINE_COLOR,
-          BOARD_OUTLINE_LINE_WIDTH_PX,
-        ),
+        [
+          outlineHexSvgElement(
+            cx,
+            cy,
+            board.outline,
+            unitsPerMm,
+            BOARD_OUTLINE_COLOR,
+            BOARD_OUTLINE_LINE_WIDTH_PX,
+          ),
+          sectionLineSvgElements(cx, cy, board.outline, unitsPerMm),
+        ]
+          .filter(Boolean)
+          .join('\n'),
       ),
     ]
       .filter(Boolean)
@@ -297,7 +341,8 @@ export function drawBoardOutlinePdf(
     pdf.stroke()
   }
 
-  pdf.setDrawColor(212, 212, 216)
+  pdf.setDrawColor(161, 161, 170)
+  pdf.setLineWidth(SECTION_LINE_STROKE_MM)
   for (const line of outline.sectionLines) {
     const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, 1)
     pdf.line(start[0], start[1], end[0], end[1])

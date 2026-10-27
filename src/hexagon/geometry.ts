@@ -1,4 +1,4 @@
-/** Pointy-top hexagon: flat-to-flat distance equals sqrt(3) * circumradius. */
+/** Flat-top hexagon: flat-to-flat distance equals sqrt(3) * circumradius. */
 export function outlineFlatToFlatMm(circumradiusMm: number): number {
   return circumradiusMm * Math.sqrt(3)
 }
@@ -6,8 +6,8 @@ export function outlineFlatToFlatMm(circumradiusMm: number): number {
 export function diagramSizeCm(circumradiusMm: number): { widthCm: number; heightCm: number } {
   const radiusCm = circumradiusMm / 10
   return {
-    widthCm: radiusCm * Math.sqrt(3),
-    heightCm: 2 * radiusCm,
+    widthCm: 2 * radiusCm,
+    heightCm: radiusCm * Math.sqrt(3),
   }
 }
 
@@ -16,11 +16,15 @@ export const LINE_COLOR = '#0000ff'
 /** Board outline hexagon stroke. */
 export const BOARD_OUTLINE_COLOR = '#ff0000'
 
-/** Light grey for the three lines that trisect the board outline. */
-export const SECTION_LINE_COLOR = '#e4e4e7'
+/** Grey 2 mm section lines through the board outline. */
+export const SECTION_LINE_COLOR = '#a1a1aa'
+export const SECTION_LINE_STROKE_MM = 2
 
-/** Rotate the board drawing 30° counter-clockwise on the page. */
-export const BOARD_DRAWING_ROTATION_RAD = -Math.PI / 6
+/** Rotate the board π/3 counter-clockwise from the previous pointy-top page orientation. */
+export const BOARD_DRAWING_ROTATION_RAD = -Math.PI / 2
+
+/** Extra clockwise rotation of the track relative to the outline. */
+export const TRACK_ROTATION_RAD = Math.PI / 6
 
 export const LANE_SPIRAL_LINE_COLOR = '#a1a1aa'
 
