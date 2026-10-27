@@ -1,8 +1,11 @@
 import { HEX_INRADIUS_PER_SIDE, TRACK_SPACING_MM } from './constants'
 import type { BoardOutline, PolarPoint, Track } from './types'
 
-/** Thetas of outer hex vertices that get section lines through the center. */
-export const SECTION_LINE_THETAS = Array.from({ length: 3 }, (_, i) => ((2 * i) * Math.PI) / 3)
+/** Thetas of the three section lines through the center, π/3 CCW from the vertices. */
+export const SECTION_LINE_THETAS = Array.from(
+  { length: 3 },
+  (_, i) => ((2 * i) * Math.PI) / 3 - Math.PI / 3,
+)
 
 export function innermostHoleRadiusMm(track: Pick<Track, 'lanes'>): number {
   let minR = Infinity

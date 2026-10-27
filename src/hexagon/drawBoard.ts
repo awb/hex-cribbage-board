@@ -7,7 +7,13 @@ import {
   laneBackgroundSvgElements,
   laneSpiralLineSvgElements,
 } from './drawLanes'
-import { BOARD_OUTLINE_COLOR, BOARD_OUTLINE_LINE_WIDTH_PX, LINE_COLOR, SECTION_LINE_COLOR } from './geometry'
+import {
+  BOARD_OUTLINE_COLOR,
+  BOARD_OUTLINE_LINE_WIDTH_PX,
+  LINE_COLOR,
+  SECTION_LINE_COLOR,
+  SECTION_LINE_STROKE_MM,
+} from './geometry'
 import { polarToCanvas } from './polar'
 import type { BoardRepresentation } from './representations'
 import type { BoardOutline, CribbageBoard, PolarPoint } from './types'
@@ -86,7 +92,7 @@ function strokeOutlineCanvas(
 
   for (const line of outline.sectionLines) {
     const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, unitsPerMm)
-    strokeLineCanvas(ctx, start, end, Math.max(1, lineWidth * 0.6), SECTION_LINE_COLOR)
+    strokeLineCanvas(ctx, start, end, SECTION_LINE_STROKE_MM * unitsPerMm, SECTION_LINE_COLOR)
   }
 }
 
@@ -180,8 +186,8 @@ function sectionLineSvgElements(
   cy: number,
   outline: BoardOutline,
   unitsPerMm: number,
-  strokeWidth: number,
 ): string {
+  const strokeWidth = SECTION_LINE_STROKE_MM * unitsPerMm
   return outline.sectionLines
     .map((line) => {
       const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, unitsPerMm)
@@ -200,7 +206,7 @@ function outlineSvgElements(
 ): string {
   return [
     outlineHexSvgElement(cx, cy, outline, unitsPerMm, stroke, strokeWidth),
-    sectionLineSvgElements(cx, cy, outline, unitsPerMm, strokeWidth),
+    sectionLineSvgElements(cx, cy, outline, unitsPerMm),
   ]
     .filter(Boolean)
     .join('\n')
@@ -284,14 +290,19 @@ export function boardSvgElements(
       artworkTrackSvgElements(cx, cy, board, unitsPerMm, holeStyle),
       svgLayer(
         'outline',
-        outlineHexSvgElement(
-          cx,
-          cy,
-          board.outline,
-          unitsPerMm,
-          BOARD_OUTLINE_COLOR,
-          BOARD_OUTLINE_LINE_WIDTH_PX,
-        ),
+        [
+          outlineHexSvgElement(
+            cx,
+            cy,
+            board.outline,
+            unitsPerMm,
+            BOARD_OUTLINE_COLOR,
+            BOARD_OUTLINE_LINE_WIDTH_PX,
+          ),
+          sectionLineSvgElements(cx, cy, board.outline, unitsPerMm),
+        ]
+          .filter(Boolean)
+          .join('\n'),
       ),
     ]
       .filter(Boolean)
@@ -330,7 +341,8 @@ export function drawBoardOutlinePdf(
     pdf.stroke()
   }
 
-  pdf.setDrawColor(212, 212, 216)
+  pdf.setDrawColor(161, 161, 170)
+  pdf.setLineWidth(SECTION_LINE_STROKE_MM)
   for (const line of outline.sectionLines) {
     const [start, end] = polarLineCanvasPoints(cx, cy, line.start, line.end, 1)
     pdf.line(start[0], start[1], end[0], end[1])

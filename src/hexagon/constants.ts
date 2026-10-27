@@ -42,12 +42,14 @@ export const LANE_BACKGROUND_COLORS = [
 
 /** Artwork: one box around each lane's READY hole pair. */
 export const READY_BOX_STROKE_COLOR = '#0000ff'
-export const READY_BOX_STROKE_MM = 0.1
+export const READY_BOX_STROKE_MM = 1
 export const READY_BOX_PADDING_MM = 3
 
-/** Artwork: WINNER circle on the first lane's finish hole. */
+/** Artwork: two concentric WINNER rings on the first lane's finish hole. */
 export const WINNER_CIRCLE_STROKE_COLOR = '#0000ff'
 export const WINNER_CIRCLE_STROKE_MM = 2
+export const WINNER_CIRCLE_RADIUS_MM = LANE_SPACING_MM
+export const WINNER_CIRCLE_INNER_RADIUS_MM = LANE_SPACING_MM / 2
 
 /** Artwork: hole ring. Width/height 2.85 mm, hairline red stroke. */
 export const ARTWORK_HOLE_COLOR = '#ff0000'
@@ -60,7 +62,8 @@ export const LANE_LINE_COLOR = '#0000ff'
 export const LANE_LINE_STROKE_MM = 1
 export const LANE_LINE_PADDING_MM = 1.5
 
-/** Artwork: center logo hexagon. */
+/** Artwork: center logo hexagon. Temporarily suppressed. */
+export const SHOW_LOGO = false
 export const LOGO_SIDE_MM = 40
 export const LOGO_STROKE_COLOR = '#000000'
 export const LOGO_STROKE_MM = 0.6
