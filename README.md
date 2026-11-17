@@ -74,7 +74,7 @@ const DEFAULT_LAYOUT: LayoutVariant = 'hexagonal2'
 - **Track** — a set of parallel lanes with separation `LANE_SPACING_MM` and scoring length `TRACK_LENGTH_HOLES`. The first lane starts at the track initial location; the initial radial location of the 2nd lane is less by `LANE_SPACING_MM`, and the 3rd lane similarly.
 - **Lane** — an ordered set of segments, each starting from the endpoint of the previous. Each lane begins with a starter segment (READY holes at the 4th and 5th positions). The first lane ends with a finish segment (WINNER hole at the 1st position).
 - **Segment** — has a defined start point and end point. Scoring segments contain 5 holes in a straight line, with inter-group padding proportionate to hole spacing by `PADDING`.
-- **Hole** — a point at polar coordinate `(r, theta)`. Drill-template drawing is a 3 mm circle plus a 4 mm cross; other views draw a 3 mm disk.
+- **Hole** — a point at polar coordinate `(r, theta)`. Drill-template drawing is a 2.4 mm circle plus a 4 mm cross; other views draw a 2.4 mm disk.
 
 ## Functional design
 
@@ -91,7 +91,7 @@ STARTER_HOLE_INDICES = [3, 4]       // 4th and 5th of 5
 FINISH_HOLE_INDICES = [0]           // 1st of 5, first lane only
 LANE_COUNT = 3
 FINISH_LANE_INDEX = 0
-HOLE_DIAMETER_MM = 3
+HOLE_DIAMETER_MM = 2.4
 HOLE_CROSS_LENGTH_MM = 4
 TURN_DELTA_RADIUS_MM = LANE_COUNT * LANE_SPACING_MM + TRACK_SPACING_MM
 HEX_INRADIUS_PER_SIDE = √3 / 2
@@ -105,7 +105,7 @@ READY_BOX_STROKE_MM = 1
 WINNER_CIRCLE_STROKE_MM = 2
 WINNER_CIRCLE_RADIUS_MM = LANE_SPACING_MM
 WINNER_CIRCLE_INNER_RADIUS_MM = LANE_SPACING_MM / 2
-ARTWORK_HOLE_SIZE_MM = 2.85
+ARTWORK_HOLE_SIZE_MM = HOLE_DIAMETER_MM
 ARTWORK_HOLE_STROKE_MM = 0.025
 ARTWORK_HOLE_COLOR = #ff0000
 LANE_LINE_STROKE_MM = 1

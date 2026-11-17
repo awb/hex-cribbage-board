@@ -20,7 +20,7 @@ export const SPIRAL_VERTEX_COUNT = TRACK_LENGTH_HOLES / HOLES_PER_GROUP + 1
 /** Includes the extra vertex for the starter segment at the beginning of each lane. */
 export const LANE_VERTEX_COUNT = SPIRAL_VERTEX_COUNT + 1
 
-export const HOLE_DIAMETER_MM = 3
+export const HOLE_DIAMETER_MM = 2.4
 export const HOLE_CROSS_LENGTH_MM = 4
 
 export const LANE_COUNT = 3
@@ -51,9 +51,9 @@ export const WINNER_CIRCLE_STROKE_MM = 2
 export const WINNER_CIRCLE_RADIUS_MM = LANE_SPACING_MM
 export const WINNER_CIRCLE_INNER_RADIUS_MM = LANE_SPACING_MM / 2
 
-/** Artwork: hole ring. Width/height 2.85 mm, hairline red stroke. */
+/** Artwork: hole ring. Width/height 2.4 mm, hairline red stroke. */
 export const ARTWORK_HOLE_COLOR = '#ff0000'
-export const ARTWORK_HOLE_SIZE_MM = 2.85
+export const ARTWORK_HOLE_SIZE_MM = HOLE_DIAMETER_MM
 export const ARTWORK_HOLE_RADIUS_MM = ARTWORK_HOLE_SIZE_MM / 2
 export const ARTWORK_HOLE_STROKE_MM = 0.025
 

@@ -1,12 +1,6 @@
 import { HEX_INRADIUS_PER_SIDE, TRACK_SPACING_MM } from './constants'
 import type { BoardOutline, PolarPoint, Track } from './types'
 
-/** Thetas of the three section lines through the center, π/3 CCW from the vertices. */
-export const SECTION_LINE_THETAS = Array.from(
-  { length: 3 },
-  (_, i) => ((2 * i) * Math.PI) / 3 - Math.PI / 3,
-)
-
 export function innermostHoleRadiusMm(track: Pick<Track, 'lanes'>): number {
   let minR = Infinity
 
@@ -44,16 +38,6 @@ export function outlineCircumradiusMm(track: Pick<Track, 'lanes'>): number {
   return outermostHole(track).r / HEX_INRADIUS_PER_SIDE + TRACK_SPACING_MM
 }
 
-function sectionLines(
-  outerRadius: number,
-  innerRadius: number,
-): { start: PolarPoint; end: PolarPoint }[] {
-  return SECTION_LINE_THETAS.map((theta) => ({
-    start: { r: outerRadius, theta },
-    end: { r: innerRadius, theta },
-  }))
-}
-
 /** Flat-top hexagon with vertices left and right after drawing rotation. */
 export function generateBoardOutline(track: Track): BoardOutline {
   const circumradiusMm = outlineCircumradiusMm(track)
@@ -66,6 +50,6 @@ export function generateBoardOutline(track: Track): BoardOutline {
       theta: (i * Math.PI) / 3,
     })),
     innerBoardRadius: innerRadius,
-    sectionLines: sectionLines(circumradiusMm, 0),
+    sectionLines: [],
   }
 }
