@@ -102,25 +102,19 @@ function svgLayer(id: string, content: string): string {
   return `<g id="${id}" inkscape:groupmode="layer" inkscape:label="${id}">\n${inner}\n</g>`
 }
 
-function svgGroup(id: string, content: string): string {
-  const inner = content.trim()
-  if (!inner) return ''
-  return `<g id="${id}">\n${inner}\n</g>`
-}
-
 function padTrackPosition(position: number): string {
   return String(position).padStart(3, '0')
 }
 
-function artworkTrackSvgElements(
+function artworkTrackSvgLayers(
   cx: number,
   cy: number,
   board: CribbageBoard,
   unitsPerMm: number,
   holeStyle: HoleStyle,
-): string {
+): { holes: string; lines: string } {
   const lines: string[] = []
-  const holeGroups: string[] = []
+  const holes: string[] = []
 
   for (const [laneIndex, lane] of board.track.lanes.entries()) {
     let trackPosition = 0
@@ -132,39 +126,26 @@ function artworkTrackSvgElements(
           segmentLaneLineSvgElement(cx, cy, segment.holes, unitsPerMm, `line-${laneIndex}-${position}`),
         )
         const ids = segment.holes.map((_, holeIndex) => `hole-${laneIndex}-${position}-${holeIndex}`)
-        holeGroups.push(
-          svgGroup(
-            `segment-${laneIndex}-${position}`,
-            holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, ids),
-          ),
-        )
+        holes.push(holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, ids))
         trackPosition += HOLES_PER_GROUP
         continue
       }
 
       if (laneIndex === FINISH_LANE_INDEX && segment.holes.length === 1) {
-        holeGroups.push(
-          svgGroup(
-            `segment-${laneIndex}-${padTrackPosition(TRACK_LENGTH_HOLES)}`,
-            holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, [
-              'hole-winner',
-            ]),
-          ),
+        holes.push(
+          holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, [
+            'hole-winner',
+          ]),
         )
         continue
       }
 
       const ids = segment.holes.map((_, holeIndex) => `hole-ready-${laneIndex}-${holeIndex}`)
-      holeGroups.push(
-        svgGroup(
-          `segment-${laneIndex}-ready`,
-          holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, ids),
-        ),
-      )
+      holes.push(holesSvgElements(cx, cy, segment.holes, unitsPerMm, holeStyle, LINE_COLOR, LINE_COLOR, ids))
     }
   }
 
-  return [svgGroup('segment-lines', lines.join('\n')), ...holeGroups].filter(Boolean).join('\n')
+  return { holes: holes.filter(Boolean).join('\n'), lines: lines.filter(Boolean).join('\n') }
 }
 
 function outlineHexSvgElement(
@@ -285,9 +266,11 @@ export function boardSvgElements(
   }
 
   if (representation === 'artwork') {
+    const track = artworkTrackSvgLayers(cx, cy, board, unitsPerMm, holeStyle)
     return [
+      svgLayer('holes', track.holes),
       svgLayer('artwork', artworkSvgElements(cx, cy, board, unitsPerMm)),
-      artworkTrackSvgElements(cx, cy, board, unitsPerMm, holeStyle),
+      svgLayer('segment-lines', track.lines),
       svgLayer(
         'outline',
         [

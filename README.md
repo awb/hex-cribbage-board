@@ -209,10 +209,10 @@ Representations (UI toggle; applies to canvas, PDF, and SVG):
 
 The board outline hexagon is red (`BOARD_OUTLINE_COLOR`). The three section lines are grey (`SECTION_LINE_COLOR`) at `SECTION_LINE_STROKE_MM`. The logo hexagon and its trisection lines are black when shown.
 
-Artwork SVG export uses named groups. The root `svg` width and height are in millimetres.
-- **`artwork`** — READY boxes, WINNER circles, and a nested `logo` group when `SHOW_LOGO` is on
+Artwork SVG export uses named top-level layers. The root `svg` width and height are in millimetres.
+- **`holes`** — every hole (`hole-a-b-c`, `hole-ready-a-b`, `hole-winner`)
+- **`artwork`** — READY polygons, WINNER circles, and a nested `logo` group when `SHOW_LOGO` is on
 - **`segment-lines`** — `line-a-b` for each 5-hole scoring segment (`a` = lane, `b` = track position 000–115)
-- **`segment-a-b`** — holes for that segment (`hole-a-b-c`, `hole-ready-a-b`, or `hole-winner`)
 - **`outline`** — the board outline hex and section lines
 
 The HTML header lists board attributes (outline, spacing, hole counts, layout, view) in a table.
