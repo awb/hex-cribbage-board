@@ -1,4 +1,4 @@
-import { FINISH_LANE_INDEX, HOLES_PER_GROUP, TRACK_LENGTH_HOLES } from './constants'
+import { FINISH_LANE_INDEX, HOLES_PER_GROUP } from './constants'
 import { artworkSvgElements, drawArtworkCanvas, segmentLaneLineSvgElement } from './drawArtwork'
 import { drawBoardHolesCanvas, holeSvgElements, holesSvgElements, type HoleStyle } from './drawHoles'
 import {
